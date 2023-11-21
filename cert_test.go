@@ -58,14 +58,14 @@ func TestMain(m *testing.M) {
 
 func setup(addr string) (*http.Server, string, error) {
 	if err := setupEnv(); err != nil {
-		return nil, "", err
+		return nil, "", fmt.Errorf("failed to set environment valiable: %w", err)
 	}
 	tempDir, certFile, keyFile, err := setupPath()
 	if err != nil {
-		log.Fatal("failed to create temp dir: ", err)
+		return nil, "", fmt.Errorf("failed to create temp dir: %w", err)
 	}
 	if err := setupCert(certFile, keyFile); err != nil {
-		return nil, "", err
+		return nil, "", fmt.Errorf("failed to create certificate: %w", err)
 	}
 	server := setupServer(addr)
 	ch := make(chan error, 1)
@@ -81,7 +81,7 @@ func setup(addr string) (*http.Server, string, error) {
 	select {
 	case err := <-ch:
 		if err != nil {
-			return nil, "", fmt.Errorf("cannot run server: %w", err)
+			return nil, "", fmt.Errorf("failed to run server: %w", err)
 		}
 	default:
 	}
