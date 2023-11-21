@@ -1,0 +1,35 @@
+run:
+  timeout: 5m
+linters:
+  enable:
+    - dogsled
+    - dupl
+    - errorlint
+    - gocritic
+    - gocyclo
+    - gofmt
+    - gofumpt
+    - gosec
+    - makezero
+    - misspell
+    - nakedret
+    - predeclared
+    - revive
+    - stylecheck
+    - tagliatelle
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
+    - unused
+    - wastedassign
+    - whitespace
+linters-settings:
+  gosec:
+    excludes:
+      - G402
+issues:
+  exclude-rules:
+    - linters:
+        - dupl
+      path: _test\.go
