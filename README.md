@@ -63,7 +63,7 @@ tlc3 -d example.com,www.example.com -t 10s
 Warning
 -------
 
-`insecure`,`-i` option can be used to omit verification of the certificate chain and host name. However, this should not be used unless it is clear that there is no problem, since it risks exposing the certificate to man-in-the-middle attacks.
+`--insecure`,`-i` option can be used to skip verification of the certificate chain and host name. However, this risks exposure to man-in-the-middle attacks and should not be used unless it is clear that there is no problem.
 
 If this option is used, y/n must be returned for the next question.
 
