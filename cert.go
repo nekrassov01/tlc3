@@ -51,16 +51,16 @@ func getCertList(ctx context.Context, addrs []string, timeout string, insecure b
 			if err != nil {
 				return err
 			}
-			params := newParams(addr, host, port, duration, insecure)
-			params.lookupIP(ctx)
-			if err := params.getTLSConn(ctx); err != nil {
+			connector := newConnector(addr, host, port, duration, insecure)
+			connector.lookupIP(ctx)
+			if err := connector.getTLSConn(ctx); err != nil {
 				return err
 			}
-			info, err := params.getServerCert()
+			info, err := connector.getServerCert()
 			if err != nil {
 				return err
 			}
-			defer params.tlsConn.Close()
+			defer connector.tlsConn.Close()
 			res[i] = info
 			return nil
 		})
@@ -71,7 +71,7 @@ func getCertList(ctx context.Context, addrs []string, timeout string, insecure b
 	return res, nil
 }
 
-type params struct {
+type connector struct {
 	addr      string
 	host      string
 	port      string
@@ -81,8 +81,8 @@ type params struct {
 	tlsConn   *tls.Conn
 }
 
-func newParams(addr, host, port string, timeout time.Duration, insecure bool) *params {
-	return &params{
+func newConnector(addr, host, port string, timeout time.Duration, insecure bool) *connector {
+	return &connector{
 		addr:    addr,
 		host:    host,
 		port:    port,
@@ -97,46 +97,46 @@ func newParams(addr, host, port string, timeout time.Duration, insecure bool) *p
 
 // Since IP address lookup is not the primary responsibility of this application,
 // it does not return an error but only a zero value in case of failure.
-func (p *params) lookupIP(ctx context.Context) {
-	ctx, cancel := context.WithTimeout(ctx, p.timeout)
+func (c *connector) lookupIP(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 	resolver := net.Resolver{}
-	ips, err := resolver.LookupIP(ctx, "ip", p.host)
+	ips, err := resolver.LookupIP(ctx, "ip", c.host)
 	if err != nil {
-		p.ips = []string{}
+		c.ips = []string{}
 	}
 	for _, ip := range ips {
-		p.ips = append(p.ips, ip.String())
+		c.ips = append(c.ips, ip.String())
 	}
 }
 
-func (p *params) getTLSConn(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, p.timeout)
+func (c *connector) getTLSConn(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
-	dialer := tls.Dialer{Config: p.tlsConfig}
-	conn, err := dialer.DialContext(ctx, "tcp", p.addr)
+	dialer := tls.Dialer{Config: c.tlsConfig}
+	conn, err := dialer.DialContext(ctx, "tcp", c.addr)
 	if err != nil {
-		return fmt.Errorf("cannot connect to \"%s\": %w", p.addr, err)
+		return fmt.Errorf("cannot connect to \"%s\": %w", c.addr, err)
 	}
 	tlsConn, ok := conn.(*tls.Conn)
 	if !ok {
 		return fmt.Errorf("connection is not TLS")
 	}
-	p.tlsConn = tlsConn
+	c.tlsConn = tlsConn
 	return nil
 }
 
-func (p *params) getServerCert() (*certInfo, error) {
-	certs := p.tlsConn.ConnectionState().PeerCertificates
+func (c *connector) getServerCert() (*certInfo, error) {
+	certs := c.tlsConn.ConnectionState().PeerCertificates
 	if len(certs) == 0 {
-		return nil, fmt.Errorf("cannot find cert for \"%s\"", p.host)
+		return nil, fmt.Errorf("cannot find cert for \"%s\"", c.host)
 	}
 	cert := certs[0]
 	now := time.Now().Truncate(time.Minute)
 	return &certInfo{
-		DomainName:  p.host,
-		AccessPort:  p.port,
-		IPAddresses: p.ips,
+		DomainName:  c.host,
+		AccessPort:  c.port,
+		IPAddresses: c.ips,
 		Issuer:      cert.Issuer.String(),
 		CommonName:  cert.Subject.CommonName,
 		SANs:        getSANs(cert),

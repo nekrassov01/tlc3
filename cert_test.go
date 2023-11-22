@@ -299,7 +299,7 @@ func Test_getCertList(t *testing.T) {
 	}
 }
 
-func Test_newParams(t *testing.T) {
+func Test_newConnector(t *testing.T) {
 	type args struct {
 		addr     string
 		host     string
@@ -310,7 +310,7 @@ func Test_newParams(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *params
+		want *connector
 	}{
 		{
 			name: "basic",
@@ -321,7 +321,7 @@ func Test_newParams(t *testing.T) {
 				timeout:  5 * time.Second,
 				insecure: false,
 			},
-			want: &params{
+			want: &connector{
 				addr:    addr,
 				host:    host,
 				port:    port,
@@ -336,14 +336,14 @@ func Test_newParams(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := newParams(tt.args.addr, tt.args.host, tt.args.port, tt.args.timeout, tt.args.insecure); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("newParams() = %v, want %v", got, tt.want)
+			if got := newConnector(tt.args.addr, tt.args.host, tt.args.port, tt.args.timeout, tt.args.insecure); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("newConnector() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_params_lookupIP(t *testing.T) {
+func Test_connector_lookupIP(t *testing.T) {
 	ctx := context.Background()
 	type fields struct {
 		addr      string
@@ -398,7 +398,7 @@ func Test_params_lookupIP(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p := &params{
+			c := &connector{
 				addr:      tt.fields.addr,
 				host:      tt.fields.host,
 				port:      tt.fields.port,
@@ -407,15 +407,15 @@ func Test_params_lookupIP(t *testing.T) {
 				tlsConfig: tt.fields.tlsConfig,
 				tlsConn:   tt.fields.tlsConn,
 			}
-			p.lookupIP(tt.args.ctx)
-			if !reflect.DeepEqual(p.ips, tt.want) {
-				t.Errorf("params.lookupIP() = %v, want %v", p.ips, tt.want)
+			c.lookupIP(tt.args.ctx)
+			if !reflect.DeepEqual(c.ips, tt.want) {
+				t.Errorf("connector.lookupIP() = %v, want %v", c.ips, tt.want)
 			}
 		})
 	}
 }
 
-func Test_params_getTLSConn(t *testing.T) {
+func Test_connector_getTLSConn(t *testing.T) {
 	ctx := context.Background()
 	type fields struct {
 		addr      string
@@ -478,7 +478,7 @@ func Test_params_getTLSConn(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p := &params{
+			c := &connector{
 				addr:      tt.fields.addr,
 				host:      tt.fields.host,
 				port:      tt.fields.port,
@@ -487,14 +487,14 @@ func Test_params_getTLSConn(t *testing.T) {
 				tlsConfig: tt.fields.tlsConfig,
 				tlsConn:   tt.fields.tlsConn,
 			}
-			if err := p.getTLSConn(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("params.getTLSConn() error = %v, wantErr %v", err, tt.wantErr)
+			if err := c.getTLSConn(tt.args.ctx); (err != nil) != tt.wantErr {
+				t.Errorf("connector.getTLSConn() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 }
 
-func Test_params_getServerCert(t *testing.T) {
+func Test_connector_getServerCert(t *testing.T) {
 	ctx := context.Background()
 	type fields struct {
 		addr      string
@@ -542,7 +542,7 @@ func Test_params_getServerCert(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p := &params{
+			c := &connector{
 				addr:      tt.fields.addr,
 				host:      tt.fields.host,
 				port:      tt.fields.port,
@@ -551,16 +551,16 @@ func Test_params_getServerCert(t *testing.T) {
 				tlsConfig: tt.fields.tlsConfig,
 				tlsConn:   tt.fields.tlsConn,
 			}
-			if err := p.getTLSConn(ctx); err != nil {
+			if err := c.getTLSConn(ctx); err != nil {
 				t.Fatal(err)
 			}
-			got, err := p.getServerCert()
+			got, err := c.getServerCert()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("params.getServerCert() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("connector.getServerCert() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("params.getServerCert() = %v, want %v", got, tt.want)
+				t.Errorf("connector.getServerCert() = %v, want %v", got, tt.want)
 			}
 			if diff := cmp.Diff(got, tt.want); diff != "" {
 				t.Errorf(diff)
