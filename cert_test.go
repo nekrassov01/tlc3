@@ -17,6 +17,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"testing"
 	"time"
 
@@ -236,7 +237,7 @@ func Test_getCertList(t *testing.T) {
 				{
 					DomainName:  host,
 					AccessPort:  port,
-					IPAddresses: []string{"::1", "127.0.0.1"},
+					IPAddresses: []string{"127.0.0.1", "::1"},
 					Issuer:      "CN=local test CA",
 					CommonName:  "local test CA",
 					SANs:        []string{},
@@ -377,7 +378,7 @@ func Test_connector_lookupIP(t *testing.T) {
 			args: args{
 				ctx: ctx,
 			},
-			want: []string{"::1", "127.0.0.1"},
+			want: []string{"127.0.0.1", "::1"},
 		},
 		{
 			name: "empty",
@@ -408,6 +409,9 @@ func Test_connector_lookupIP(t *testing.T) {
 				tlsConn:   tt.fields.tlsConn,
 			}
 			c.lookupIP(tt.args.ctx)
+			sort.Slice(c.ips, func(i, j int) bool {
+				return c.ips[i] < c.ips[j]
+			})
 			if !reflect.DeepEqual(c.ips, tt.want) {
 				t.Errorf("connector.lookupIP() = %v, want %v", c.ips, tt.want)
 			}
