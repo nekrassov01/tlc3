@@ -17,7 +17,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"sort"
 	"testing"
 	"time"
 
@@ -409,9 +408,6 @@ func Test_connector_lookupIP(t *testing.T) {
 				tlsConn:   tt.fields.tlsConn,
 			}
 			c.lookupIP(tt.args.ctx)
-			sort.Slice(c.ips, func(i, j int) bool {
-				return c.ips[i] < c.ips[j]
-			})
 			if !reflect.DeepEqual(c.ips, tt.want) {
 				t.Errorf("connector.lookupIP() = %v, want %v", c.ips, tt.want)
 			}

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"runtime"
+	"sort"
 	"strings"
 	"time"
 
@@ -108,6 +109,9 @@ func (c *connector) lookupIP(ctx context.Context) {
 	for _, ip := range ips {
 		c.ips = append(c.ips, ip.String())
 	}
+	sort.Slice(c.ips, func(i, j int) bool {
+		return c.ips[i] < c.ips[j]
+	})
 }
 
 func (c *connector) getTLSConn(ctx context.Context) error {
