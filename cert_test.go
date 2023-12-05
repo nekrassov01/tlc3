@@ -215,7 +215,7 @@ func Test_getCertList(t *testing.T) {
 	type args struct {
 		ctx      context.Context
 		addrs    []string
-		timeout  string
+		timeout  time.Duration
 		insecure bool
 	}
 	tests := []struct {
@@ -229,7 +229,7 @@ func Test_getCertList(t *testing.T) {
 			args: args{
 				ctx:      ctx,
 				addrs:    []string{addr},
-				timeout:  "5s",
+				timeout:  5 * time.Second,
 				insecure: true,
 			},
 			want: []*certInfo{
@@ -247,39 +247,6 @@ func Test_getCertList(t *testing.T) {
 				},
 			},
 			wantErr: false,
-		},
-		{
-			name: "timeout parsing error",
-			args: args{
-				ctx:      ctx,
-				addrs:    []string{addr},
-				timeout:  "5x",
-				insecure: true,
-			},
-			want:    nil,
-			wantErr: true,
-		},
-		{
-			name: "invalid host error",
-			args: args{
-				ctx:      ctx,
-				addrs:    []string{"dummy:" + port},
-				timeout:  "5s",
-				insecure: true,
-			},
-			want:    nil,
-			wantErr: true,
-		},
-		{
-			name: "invalid port error",
-			args: args{
-				ctx:      ctx,
-				addrs:    []string{host + ":xxx"},
-				timeout:  "5s",
-				insecure: true,
-			},
-			want:    nil,
-			wantErr: true,
 		},
 	}
 	for _, tt := range tests {

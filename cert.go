@@ -28,15 +28,7 @@ type certInfo struct {
 	DaysLeft    int
 }
 
-func getCertList(ctx context.Context, addrs []string, timeout string, insecure bool) ([]*certInfo, error) {
-	duration, err := time.ParseDuration(timeout)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"cannot convert \"%s\" to time duration: valid time units are ns|us|ms|s|m|h: %w",
-			timeout,
-			err,
-		)
-	}
+func getCertList(ctx context.Context, addrs []string, timeout time.Duration, insecure bool) ([]*certInfo, error) {
 	res := make([]*certInfo, len(addrs))
 	sem := semaphore.NewWeighted(int64(runtime.NumCPU()))
 	eg, ctx := errgroup.WithContext(ctx)
@@ -52,7 +44,7 @@ func getCertList(ctx context.Context, addrs []string, timeout string, insecure b
 			if err != nil {
 				return err
 			}
-			connector := newConnector(addr, host, port, duration, insecure)
+			connector := newConnector(addr, host, port, timeout, insecure)
 			connector.lookupIP(ctx)
 			if err := connector.getTLSConn(ctx); err != nil {
 				return err

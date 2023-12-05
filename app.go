@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli/v2"
@@ -23,7 +24,7 @@ type destination struct {
 	domain     cli.StringSlice
 	list       string
 	output     string
-	timeout    string
+	timeout    time.Duration
 	insecure   bool
 	noTimeInfo bool
 }
@@ -33,7 +34,7 @@ type flag struct {
 	domain     *cli.StringSliceFlag
 	list       *cli.PathFlag
 	output     *cli.StringFlag
-	timeout    *cli.StringFlag
+	timeout    *cli.DurationFlag
 	insecure   *cli.BoolFlag
 	noTimeInfo *cli.BoolFlag
 }
@@ -65,12 +66,12 @@ func newApp() *app {
 		Destination: &a.destination.output,
 		Value:       formatJSON.String(),
 	}
-	a.flag.timeout = &cli.StringFlag{
+	a.flag.timeout = &cli.DurationFlag{
 		Name:        "timeout",
 		Aliases:     []string{"t"},
 		Usage:       "network timeout: ns|us|ms|s|m|h",
 		Destination: &a.destination.timeout,
-		Value:       "5s",
+		Value:       5 * time.Second,
 	}
 	a.flag.insecure = &cli.BoolFlag{
 		Name:        "insecure",
