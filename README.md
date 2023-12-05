@@ -81,11 +81,19 @@ export TLC3_NON_INTERACTIVE=true
 Installation
 ------------
 
-Download binary from the release page or install it with the following command:
+Install with homebrew
+
+```sh
+brew install nekrassov01/tap/tlc3
+```
+
+Install with go
 
 ```sh
 go install github.com/nekrassov01/tlc3
 ```
+
+Or download binary from [releases](https://github.com/nekrassov01/tlc3/releases)
 
 Shell completion
 ----------------
