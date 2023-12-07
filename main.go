@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	if err := newApp().run(context.Background()); err != nil {
+	if err := newApp().cli.RunContext(context.Background(), os.Args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}

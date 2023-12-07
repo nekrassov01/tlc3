@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"sort"
@@ -15,11 +14,11 @@ import (
 
 type app struct {
 	cli *cli.App
-	destination
+	dest
 	flag
 }
 
-type destination struct {
+type dest struct {
 	completion string
 	domain     cli.StringSlice
 	list       string
@@ -45,46 +44,46 @@ func newApp() *app {
 		Name:        "completion",
 		Aliases:     []string{"c"},
 		Usage:       fmt.Sprintf("completion scripts: %s", pipeJoin(shells)),
-		Destination: &a.destination.completion,
+		Destination: &a.dest.completion,
 	}
 	a.flag.domain = &cli.StringSliceFlag{
 		Name:        "domain",
 		Aliases:     []string{"d"},
 		Usage:       "domain:port separated by commas",
-		Destination: &a.destination.domain,
+		Destination: &a.dest.domain,
 	}
 	a.flag.list = &cli.PathFlag{
 		Name:        "list",
 		Aliases:     []string{"l"},
 		Usage:       "path to newline-delimited list of domains",
-		Destination: &a.destination.list,
+		Destination: &a.dest.list,
 	}
 	a.flag.output = &cli.StringFlag{
 		Name:        "output",
 		Aliases:     []string{"o"},
 		Usage:       fmt.Sprintf("output format: %s", pipeJoin(formats)),
-		Destination: &a.destination.output,
+		Destination: &a.dest.output,
 		Value:       formatJSON.String(),
 	}
 	a.flag.timeout = &cli.DurationFlag{
 		Name:        "timeout",
 		Aliases:     []string{"t"},
 		Usage:       "network timeout: ns|us|ms|s|m|h",
-		Destination: &a.destination.timeout,
+		Destination: &a.dest.timeout,
 		Value:       5 * time.Second,
 	}
 	a.flag.insecure = &cli.BoolFlag{
 		Name:        "insecure",
 		Aliases:     []string{"i"},
 		Usage:       "skip verification of the cert chain and host name",
-		Destination: &a.destination.insecure,
+		Destination: &a.dest.insecure,
 		Value:       false,
 	}
 	a.flag.noTimeInfo = &cli.BoolFlag{
 		Name:        "no-timeinfo",
 		Aliases:     []string{"n"},
 		Usage:       "hide fields related to the current time in table output",
-		Destination: &a.destination.noTimeInfo,
+		Destination: &a.dest.noTimeInfo,
 		Value:       false,
 	}
 	a.cli = &cli.App{
@@ -94,42 +93,38 @@ func newApp() *app {
 		Description:          "CLI application for checking TLS certificate information",
 		HideHelpCommand:      true,
 		EnableBashCompletion: true,
-		Before:               a.doValidate,
-		Action:               a.doAction,
+		Before:               a.before,
+		Action:               a.action,
 		Flags:                []cli.Flag{a.flag.completion, a.flag.domain, a.flag.list, a.flag.output, a.flag.timeout, a.flag.insecure, a.flag.noTimeInfo},
 	}
 	return &a
 }
 
-func (a *app) run(ctx context.Context) error {
-	return a.cli.RunContext(ctx, os.Args)
-}
-
-func (a *app) doAction(c *cli.Context) error {
+func (a *app) action(c *cli.Context) error {
 	if c.IsSet(a.flag.completion.Name) {
-		return comp(a.destination.completion)
+		return comp(a.dest.completion)
 	}
 	var domains []string
 	var err error
 	switch {
 	case c.IsSet(a.flag.domain.Name):
-		domains = a.destination.domain.Value()
+		domains = a.dest.domain.Value()
 	case c.IsSet(a.flag.list.Name):
-		domains, err = fromList(a.destination.list)
+		domains, err = fromList(a.dest.list)
 		if err != nil {
 			return err
 		}
 	default:
 		return fmt.Errorf("cannot parse flags: cannot receive domain names from %s or %s", a.flag.domain.Name, a.flag.list.Name)
 	}
-	list, err := getCertList(c.Context, domains, a.destination.timeout, a.destination.insecure)
+	list, err := getCertList(c.Context, domains, a.dest.timeout, a.dest.insecure)
 	if err != nil {
 		return err
 	}
 	sort.Slice(list, func(i, j int) bool {
 		return list[i].DomainName < list[j].DomainName
 	})
-	out, err := out(list, a.destination.output, a.destination.noTimeInfo)
+	out, err := out(list, a.dest.output, a.dest.noTimeInfo)
 	if err != nil {
 		return err
 	}
@@ -137,7 +132,7 @@ func (a *app) doAction(c *cli.Context) error {
 	return nil
 }
 
-func (a *app) doValidate(c *cli.Context) error {
+func (a *app) before(c *cli.Context) error {
 	if err := checkProvided(c); err != nil {
 		return err
 	}
