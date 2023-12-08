@@ -128,7 +128,7 @@ func (c *connector) getServerCert() (*certInfo, error) {
 		return nil, fmt.Errorf("cannot find cert for \"%s\"", c.host)
 	}
 	cert := certs[0]
-	now := time.Now().Truncate(time.Minute)
+	now := time.Now()
 	return &certInfo{
 		DomainName:  c.host,
 		AccessPort:  c.port,
@@ -139,8 +139,12 @@ func (c *connector) getServerCert() (*certInfo, error) {
 		NotBefore:   formatTime(cert.NotBefore),
 		NotAfter:    formatTime(cert.NotAfter),
 		CurrentTime: formatTime(now),
-		DaysLeft:    int(cert.NotAfter.Sub(now).Hours() / 24),
+		DaysLeft:    daysLeft(cert.NotAfter, now),
 	}, nil
+}
+
+func daysLeft(t time.Time, u time.Time) int {
+	return int(t.Sub(u).Hours() / 24)
 }
 
 func ensureDefaultPort(addr string) string {

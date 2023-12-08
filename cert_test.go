@@ -19,8 +19,6 @@ import (
 	"reflect"
 	"testing"
 	"time"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 var (
@@ -256,11 +254,33 @@ func Test_getCertList(t *testing.T) {
 				t.Errorf("getCertList() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getCertList() = %v, want %v", got, tt.want)
-			}
-			if diff := cmp.Diff(got, tt.want); diff != "" {
-				t.Errorf(diff)
+			for _, g := range got {
+				for _, w := range tt.want {
+					if !reflect.DeepEqual(g.DomainName, w.DomainName) {
+						t.Errorf("DoaminName = %v, want %v", g.DomainName, w.DomainName)
+					}
+					if !reflect.DeepEqual(g.AccessPort, w.AccessPort) {
+						t.Errorf("AccessPort = %v, want %v", g.AccessPort, w.AccessPort)
+					}
+					if !reflect.DeepEqual(g.IPAddresses, w.IPAddresses) {
+						t.Errorf("IPAddresses = %v, want %v", g.IPAddresses, w.IPAddresses)
+					}
+					if !reflect.DeepEqual(g.Issuer, w.Issuer) {
+						t.Errorf("Issuer = %v, want %v", g.Issuer, w.Issuer)
+					}
+					if !reflect.DeepEqual(g.CommonName, w.CommonName) {
+						t.Errorf("CommonName = %v, want %v", g.CommonName, w.CommonName)
+					}
+					if !reflect.DeepEqual(g.SANs, w.SANs) {
+						t.Errorf("SANs = %v, want %v", g.SANs, w.SANs)
+					}
+					if !reflect.DeepEqual(g.NotBefore, w.NotBefore) {
+						t.Errorf("NotBefore = %v, want %v", g.NotBefore, w.NotBefore)
+					}
+					if !reflect.DeepEqual(g.NotAfter, w.NotAfter) {
+						t.Errorf("NotAfter = %v, want %v", g.NotAfter, w.NotAfter)
+					}
+				}
 			}
 		})
 	}
@@ -526,11 +546,113 @@ func Test_connector_getServerCert(t *testing.T) {
 				t.Errorf("connector.getServerCert() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("connector.getServerCert() = %v, want %v", got, tt.want)
+			if !reflect.DeepEqual(got.DomainName, tt.want.DomainName) {
+				t.Errorf("DoaminName = %v, want %v", got.DomainName, tt.want.DomainName)
 			}
-			if diff := cmp.Diff(got, tt.want); diff != "" {
-				t.Errorf(diff)
+			if !reflect.DeepEqual(got.AccessPort, tt.want.AccessPort) {
+				t.Errorf("AccessPort = %v, want %v", got.AccessPort, tt.want.AccessPort)
+			}
+			if !reflect.DeepEqual(got.IPAddresses, tt.want.IPAddresses) {
+				t.Errorf("IPAddresses = %v, want %v", got.IPAddresses, tt.want.IPAddresses)
+			}
+			if !reflect.DeepEqual(got.Issuer, tt.want.Issuer) {
+				t.Errorf("Issuer = %v, want %v", got.Issuer, tt.want.Issuer)
+			}
+			if !reflect.DeepEqual(got.CommonName, tt.want.CommonName) {
+				t.Errorf("CommonName = %v, want %v", got.CommonName, tt.want.CommonName)
+			}
+			if !reflect.DeepEqual(got.SANs, tt.want.SANs) {
+				t.Errorf("SANs = %v, want %v", got.SANs, tt.want.SANs)
+			}
+			if !reflect.DeepEqual(got.NotBefore, tt.want.NotBefore) {
+				t.Errorf("NotBefore = %v, want %v", got.NotBefore, tt.want.NotBefore)
+			}
+			if !reflect.DeepEqual(got.NotAfter, tt.want.NotAfter) {
+				t.Errorf("NotAfter = %v, want %v", got.NotAfter, tt.want.NotAfter)
+			}
+		})
+	}
+}
+
+func Test_daysLeft(t *testing.T) {
+	type args struct {
+		notAfter time.Time
+		now      time.Time
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{
+			name: "full year difference",
+			args: args{
+				notAfter: time.Date(2024, 1, 1, 9, 0, 0, 0, time.UTC),
+				now:      time.Date(2023, 1, 1, 9, 0, 0, 0, time.UTC),
+			},
+			want: 365,
+		},
+		{
+			name: "one day before new year",
+			args: args{
+				notAfter: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+				now:      time.Date(2023, 12, 31, 0, 0, 0, 0, time.UTC),
+			},
+			want: 1,
+		},
+		{
+			name: "one day difference",
+			args: args{
+				notAfter: time.Date(2023, 1, 2, 9, 0, 0, 0, time.UTC),
+				now:      time.Date(2023, 1, 1, 9, 0, 0, 0, time.UTC),
+			},
+			want: 1,
+		},
+		{
+			name: "end of year",
+			args: args{
+				notAfter: time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+				now:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: 364,
+		},
+		{
+			name: "same day and time",
+			args: args{
+				notAfter: time.Date(2023, 1, 1, 9, 0, 0, 0, time.UTC),
+				now:      time.Date(2023, 1, 1, 9, 0, 0, 0, time.UTC),
+			},
+			want: 0,
+		},
+		{
+			name: "one second difference",
+			args: args{
+				notAfter: time.Date(2023, 1, 1, 9, 0, 1, 0, time.UTC),
+				now:      time.Date(2023, 1, 1, 9, 0, 0, 0, time.UTC),
+			},
+			want: 0,
+		},
+		{
+			name: "leap year difference",
+			args: args{
+				notAfter: time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
+				now:      time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: 365,
+		},
+		{
+			name: "end of leap year",
+			args: args{
+				notAfter: time.Date(2024, 2, 29, 0, 0, 0, 0, time.UTC),
+				now:      time.Date(2024, 2, 28, 0, 0, 0, 0, time.UTC),
+			},
+			want: 1,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := daysLeft(tt.args.notAfter, tt.args.now); got != tt.want {
+				t.Errorf("daysLeft() = %v, want %v", got, tt.want)
 			}
 		})
 	}
