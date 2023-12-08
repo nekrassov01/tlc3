@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/google/go-cmp v0.6.0
 	github.com/manifoldco/promptui v0.9.0
-	github.com/nekrassov01/mintab v0.0.11
+	github.com/nekrassov01/mintab v0.0.15
 	github.com/urfave/cli/v2 v2.25.7
 	golang.org/x/sync v0.4.0
 )
