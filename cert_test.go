@@ -633,6 +633,22 @@ func Test_daysLeft(t *testing.T) {
 			want: 0,
 		},
 		{
+			name: "less than one day",
+			args: args{
+				notAfter: time.Date(2024, 1, 1, 9, 0, 0, 0, time.UTC),
+				now:      time.Date(2023, 12, 31, 9, 0, 1, 0, time.UTC),
+			},
+			want: 0,
+		},
+		{
+			name: "last second",
+			args: args{
+				notAfter: time.Date(2024, 1, 1, 9, 0, 0, 0, time.UTC),
+				now:      time.Date(2023, 12, 31, 8, 59, 59, 0, time.UTC),
+			},
+			want: 1,
+		},
+		{
 			name: "leap year difference",
 			args: args{
 				notAfter: time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
