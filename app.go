@@ -13,9 +13,9 @@ import (
 )
 
 type app struct {
-	cli *cli.App
-	dest
-	flag
+	cli  *cli.App
+	dest dest
+	flag flag
 }
 
 type dest struct {
