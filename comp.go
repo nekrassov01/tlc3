@@ -5,13 +5,13 @@ import (
 	"fmt"
 )
 
-//go:embed completion/tlc3.bash
+//go:embed completions/tlc3.bash
 var bashCompletion string
 
-//go:embed completion/tlc3.zsh
+//go:embed completions/tlc3.zsh
 var zshCompletion string
 
-//go:embed completion/tlc3.ps1
+//go:embed completions/tlc3.ps1
 var pwshCompletion string
 
 type shell int
