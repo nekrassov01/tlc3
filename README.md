@@ -28,13 +28,12 @@ GLOBAL OPTIONS:
    --completion value, -c value                           completion scripts: bash|zsh|pwsh
    --domain value, -d value [ --domain value, -d value ]  domain:port separated by commas
    --list value, -l value                                 path to newline-delimited list of domains
-   --output value, -o value                               output format: json|markdown|backlog (default: "json")
-   --timeout value, -t value                              network timeout: ns|us|ms|s|m|h (default: "5s")
+   --output value, -o value                               output format: json|table|markdown|backlog (default: "json")
+   --timeout value, -t value                              network timeout: ns|us|ms|s|m|h (default: 5s)
    --insecure, -i                                         skip verification of the cert chain and host name (default: false)
    --no-timeinfo, -n                                      hide fields related to the current time in table output (default: false)
    --help, -h                                             show help
    --version, -v                                          print the version
-
 ```
 
 Example
@@ -46,6 +45,9 @@ tlc3 -d example.com,www.example.com
 
 # Pass by file path of newline-delimited list of domains.
 tlc3 -l ./list.txt
+
+# Return in non-escape text format table
+tlc3 -d example.com,www.example.com -o table
 
 # Return in markdown format table
 tlc3 -d example.com,www.example.com -o markdown
