@@ -15,12 +15,14 @@ type format int
 
 const (
 	formatJSON format = iota
-	formatMarkdown
-	formatBacklog
+	formatTextTable
+	formatMarkdownTable
+	formatBacklogTable
 )
 
 var formats = []string{
 	"json",
+	"table",
 	"markdown",
 	"backlog",
 }
@@ -74,7 +76,7 @@ func out(input []*certInfo, format string, omit bool) (string, error) {
 	switch format {
 	case formatJSON.String():
 		return toJSON(input)
-	case formatMarkdown.String(), formatBacklog.String():
+	case formatTextTable.String(), formatMarkdownTable.String(), formatBacklogTable.String():
 		return toTable(input, format, omit)
 	default:
 		return "", fmt.Errorf(
@@ -96,13 +98,17 @@ func toTable(input []*certInfo, format string, omit bool) (string, error) {
 	var table *mintab.Table
 	defaultOpt := mintab.WithEscapeTargets([]string{"*"})
 	switch {
-	case omit && format == formatMarkdown.String():
+	case omit && format == formatTextTable.String():
 		table = mintab.NewTable(defaultOpt, mintab.WithIgnoreFields([]int{8, 9}))
-	case omit && format == formatBacklog.String():
+	case omit && format == formatMarkdownTable.String():
+		table = mintab.NewTable(defaultOpt, mintab.WithIgnoreFields([]int{8, 9}), mintab.WithFormat(mintab.MarkdownFormat))
+	case omit && format == formatBacklogTable.String():
 		table = mintab.NewTable(defaultOpt, mintab.WithIgnoreFields([]int{8, 9}), mintab.WithFormat(mintab.BacklogFormat))
-	case !omit && format == formatMarkdown.String():
+	case !omit && format == formatTextTable.String():
 		table = mintab.NewTable(defaultOpt)
-	case !omit && format == formatBacklog.String():
+	case !omit && format == formatMarkdownTable.String():
+		table = mintab.NewTable(defaultOpt, mintab.WithFormat(mintab.MarkdownFormat))
+	case !omit && format == formatBacklogTable.String():
 		table = mintab.NewTable(defaultOpt, mintab.WithFormat(mintab.BacklogFormat))
 	}
 	if err := table.Load(input); err != nil {
