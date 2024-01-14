@@ -96,20 +96,23 @@ func toJSON(input []*certInfo) (string, error) {
 
 func toTable(input []*certInfo, format string, omit bool) (string, error) {
 	var table *mintab.Table
-	defaultOpt := mintab.WithEscapeTargets([]string{"*"})
+	ignore := mintab.WithIgnoreFields([]int{8, 9})
+	escape := mintab.WithEscapeTargets([]string{"*"})
+	markdown := mintab.WithFormat(mintab.MarkdownFormat)
+	backlog := mintab.WithFormat(mintab.BacklogFormat)
 	switch {
 	case omit && format == formatTextTable.String():
-		table = mintab.NewTable(defaultOpt, mintab.WithIgnoreFields([]int{8, 9}))
+		table = mintab.NewTable(ignore)
 	case omit && format == formatMarkdownTable.String():
-		table = mintab.NewTable(defaultOpt, mintab.WithIgnoreFields([]int{8, 9}), mintab.WithFormat(mintab.MarkdownFormat))
+		table = mintab.NewTable(ignore, escape, markdown)
 	case omit && format == formatBacklogTable.String():
-		table = mintab.NewTable(defaultOpt, mintab.WithIgnoreFields([]int{8, 9}), mintab.WithFormat(mintab.BacklogFormat))
+		table = mintab.NewTable(ignore, escape, backlog)
 	case !omit && format == formatTextTable.String():
-		table = mintab.NewTable(defaultOpt)
+		table = mintab.NewTable()
 	case !omit && format == formatMarkdownTable.String():
-		table = mintab.NewTable(defaultOpt, mintab.WithFormat(mintab.MarkdownFormat))
+		table = mintab.NewTable(escape, markdown)
 	case !omit && format == formatBacklogTable.String():
-		table = mintab.NewTable(defaultOpt, mintab.WithFormat(mintab.BacklogFormat))
+		table = mintab.NewTable(escape, backlog)
 	}
 	if err := table.Load(input); err != nil {
 		return "", fmt.Errorf("cannot convert output to table: %w", err)
