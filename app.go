@@ -124,11 +124,9 @@ func (a *app) action(c *cli.Context) error {
 	sort.Slice(list, func(i, j int) bool {
 		return list[i].DomainName < list[j].DomainName
 	})
-	out, err := out(list, a.dest.output, a.dest.noTimeInfo)
-	if err != nil {
+	if err := out(list, os.Stdout, a.dest.output, a.dest.noTimeInfo); err != nil {
 		return err
 	}
-	fmt.Println(out)
 	return nil
 }
 
