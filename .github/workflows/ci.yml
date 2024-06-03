@@ -54,6 +54,8 @@ jobs:
           cache: false
 
       - name: Run tests
+        env:
+          TZ: "Asia/Tokyo"
         run: |
           git diff --cached --exit-code
           make test
