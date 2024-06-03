@@ -27,19 +27,21 @@ var (
 	addr = host + ":" + port
 )
 
-func getNotBefore() string {
-	form := "2006-01-02T15:04:05-07:00"
-	base := "2023-01-01T09:00:00+90:00"
-	t, err := time.Parse(form, base)
-	if err != nil {
-		return base
-	}
-	loc := t.In(time.Local)
-	return loc.Format(form)
+func getTime(value string) time.Time {
+	t, _ := time.Parse(time.RFC3339, value)
+	return t.In(time.Local)
 }
 
-func getNotAfter() string {
-	return time.Now().Truncate(time.Minute).In(time.Local).Add(24 * time.Hour).Format("2006-01-02T15:04:05-07:00")
+func getNotBefore() time.Time {
+	return getTime("2023-01-01T09:00:00+09:00")
+}
+
+func getNotAfter() time.Time {
+	return time.Now().Truncate(time.Hour).In(time.Local).Add(24 * time.Hour)
+}
+
+func getCurrentTime() time.Time {
+	return time.Now().Truncate(time.Hour).In(time.Local)
 }
 
 func TestMain(m *testing.M) {
@@ -114,19 +116,11 @@ func setupCert(certFile, keyFile string) error {
 	if err != nil {
 		return err
 	}
-	notBefore, err := time.Parse(time.RFC3339, getNotBefore())
-	if err != nil {
-		return err
-	}
-	notAfter, err := time.Parse(time.RFC3339, getNotAfter())
-	if err != nil {
-		return err
-	}
 	tmpl := x509.Certificate{
 		SerialNumber:          serialNumber,
 		Subject:               pkix.Name{CommonName: "local test CA"},
-		NotBefore:             notBefore,
-		NotAfter:              notAfter,
+		NotBefore:             getNotBefore(),
+		NotAfter:              getNotAfter(),
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
@@ -240,7 +234,7 @@ func Test_getCertList(t *testing.T) {
 					SANs:        []string{},
 					NotBefore:   getNotBefore(),
 					NotAfter:    getNotAfter(),
-					CurrentTime: formatTime(time.Now().Truncate(time.Minute)),
+					CurrentTime: getCurrentTime(),
 					DaysLeft:    1,
 				},
 			},
@@ -521,7 +515,7 @@ func Test_connector_getServerCert(t *testing.T) {
 				SANs:        []string{},
 				NotBefore:   getNotBefore(),
 				NotAfter:    getNotAfter(),
-				CurrentTime: formatTime(time.Now().Truncate(time.Minute)),
+				CurrentTime: getCurrentTime(),
 				DaysLeft:    1,
 			},
 			wantErr: false,

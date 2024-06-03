@@ -16,9 +16,9 @@ var input = []*certInfo{
 		Issuer:      "CN=local test CA",
 		CommonName:  "local test CA",
 		SANs:        []string{},
-		NotBefore:   "2023-01-01T09:00:00+09:00",
-		NotAfter:    "2025-01-01T09:00:00+09:00",
-		CurrentTime: "2024-01-01T09:00:00+09:00",
+		NotBefore:   getTime("2023-01-01T09:00:00+09:00"),
+		NotAfter:    getTime("2025-01-01T09:00:00+09:00"),
+		CurrentTime: getTime("2024-01-01T09:00:00+09:00"),
 		DaysLeft:    365,
 	},
 }
@@ -155,11 +155,11 @@ func Test_out(t *testing.T) {
 				format: formatTextTable.String(),
 				omit:   false,
 			},
-			want: `+------------+------------+-------------+------------------+---------------+------+---------------------------+---------------------------+---------------------------+----------+
-| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                 | NotAfter                  | CurrentTime               | DaysLeft |
-+------------+------------+-------------+------------------+---------------+------+---------------------------+---------------------------+---------------------------+----------+
-| localhost  |       8443 | -           | CN=local test CA | local test CA | -    | 2023-01-01T09:00:00+09:00 | 2025-01-01T09:00:00+09:00 | 2024-01-01T09:00:00+09:00 |      365 |
-+------------+------------+-------------+------------------+---------------+------+---------------------------+---------------------------+---------------------------+----------+
+			want: `+------------+------------+-------------+------------------+---------------+------+-------------------------------+-------------------------------+-------------------------------+----------+
+| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                     | NotAfter                      | CurrentTime                   | DaysLeft |
++------------+------------+-------------+------------------+---------------+------+-------------------------------+-------------------------------+-------------------------------+----------+
+| localhost  |       8443 | -           | CN=local test CA | local test CA | -    | 2023-01-01 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST | 2024-01-01 09:00:00 +0900 JST |      365 |
++------------+------------+-------------+------------------+---------------+------+-------------------------------+-------------------------------+-------------------------------+----------+
 `,
 			wantErr: false,
 		},
@@ -170,9 +170,9 @@ func Test_out(t *testing.T) {
 				format: formatMarkdownTable.String(),
 				omit:   false,
 			},
-			want: `| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                 | NotAfter                  | CurrentTime               | DaysLeft |
-|------------|------------|-------------|------------------|---------------|------|---------------------------|---------------------------|---------------------------|----------|
-| localhost  |       8443 | \-          | CN=local test CA | local test CA | \-   | 2023-01-01T09:00:00+09:00 | 2025-01-01T09:00:00+09:00 | 2024-01-01T09:00:00+09:00 |      365 |
+			want: `| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                     | NotAfter                      | CurrentTime                   | DaysLeft |
+|------------|------------|-------------|------------------|---------------|------|-------------------------------|-------------------------------|-------------------------------|----------|
+| localhost  |       8443 | \-          | CN=local test CA | local test CA | \-   | 2023-01-01 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST | 2024-01-01 09:00:00 +0900 JST |      365 |
 `,
 			wantErr: false,
 		},
@@ -183,8 +183,8 @@ func Test_out(t *testing.T) {
 				format: formatBacklogTable.String(),
 				omit:   false,
 			},
-			want: `| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                 | NotAfter                  | CurrentTime               | DaysLeft |h
-| localhost  |       8443 | -           | CN=local test CA | local test CA | -    | 2023-01-01T09:00:00+09:00 | 2025-01-01T09:00:00+09:00 | 2024-01-01T09:00:00+09:00 |      365 |
+			want: `| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                     | NotAfter                      | CurrentTime                   | DaysLeft |h
+| localhost  |       8443 | -           | CN=local test CA | local test CA | -    | 2023-01-01 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST | 2024-01-01 09:00:00 +0900 JST |      365 |
 `,
 			wantErr: false,
 		},
@@ -219,11 +219,11 @@ func Test_out(t *testing.T) {
 				format: formatTextTable.String(),
 				omit:   true,
 			},
-			want: `+------------+------------+-------------+------------------+---------------+------+---------------------------+---------------------------+
-| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                 | NotAfter                  |
-+------------+------------+-------------+------------------+---------------+------+---------------------------+---------------------------+
-| localhost  |       8443 | -           | CN=local test CA | local test CA | -    | 2023-01-01T09:00:00+09:00 | 2025-01-01T09:00:00+09:00 |
-+------------+------------+-------------+------------------+---------------+------+---------------------------+---------------------------+
+			want: `+------------+------------+-------------+------------------+---------------+------+-------------------------------+-------------------------------+
+| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                     | NotAfter                      |
++------------+------------+-------------+------------------+---------------+------+-------------------------------+-------------------------------+
+| localhost  |       8443 | -           | CN=local test CA | local test CA | -    | 2023-01-01 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST |
++------------+------------+-------------+------------------+---------------+------+-------------------------------+-------------------------------+
 `,
 			wantErr: false,
 		},
@@ -234,9 +234,9 @@ func Test_out(t *testing.T) {
 				format: formatMarkdownTable.String(),
 				omit:   true,
 			},
-			want: `| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                 | NotAfter                  |
-|------------|------------|-------------|------------------|---------------|------|---------------------------|---------------------------|
-| localhost  |       8443 | \-          | CN=local test CA | local test CA | \-   | 2023-01-01T09:00:00+09:00 | 2025-01-01T09:00:00+09:00 |
+			want: `| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                     | NotAfter                      |
+|------------|------------|-------------|------------------|---------------|------|-------------------------------|-------------------------------|
+| localhost  |       8443 | \-          | CN=local test CA | local test CA | \-   | 2023-01-01 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST |
 `,
 			wantErr: false,
 		},
@@ -247,8 +247,8 @@ func Test_out(t *testing.T) {
 				format: formatBacklogTable.String(),
 				omit:   true,
 			},
-			want: `| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                 | NotAfter                  |h
-| localhost  |       8443 | -           | CN=local test CA | local test CA | -    | 2023-01-01T09:00:00+09:00 | 2025-01-01T09:00:00+09:00 |
+			want: `| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                     | NotAfter                      |h
+| localhost  |       8443 | -           | CN=local test CA | local test CA | -    | 2023-01-01 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST |
 `,
 			wantErr: false,
 		},
@@ -356,11 +356,11 @@ func Test_toTable(t *testing.T) {
 				format: formatTextTable.String(),
 				omit:   false,
 			},
-			want: `+------------+------------+-------------+------------------+---------------+------+---------------------------+---------------------------+---------------------------+----------+
-| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                 | NotAfter                  | CurrentTime               | DaysLeft |
-+------------+------------+-------------+------------------+---------------+------+---------------------------+---------------------------+---------------------------+----------+
-| localhost  |       8443 | -           | CN=local test CA | local test CA | -    | 2023-01-01T09:00:00+09:00 | 2025-01-01T09:00:00+09:00 | 2024-01-01T09:00:00+09:00 |      365 |
-+------------+------------+-------------+------------------+---------------+------+---------------------------+---------------------------+---------------------------+----------+
+			want: `+------------+------------+-------------+------------------+---------------+------+-------------------------------+-------------------------------+-------------------------------+----------+
+| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                     | NotAfter                      | CurrentTime                   | DaysLeft |
++------------+------------+-------------+------------------+---------------+------+-------------------------------+-------------------------------+-------------------------------+----------+
+| localhost  |       8443 | -           | CN=local test CA | local test CA | -    | 2023-01-01 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST | 2024-01-01 09:00:00 +0900 JST |      365 |
++------------+------------+-------------+------------------+---------------+------+-------------------------------+-------------------------------+-------------------------------+----------+
 `,
 			wantErr: false,
 		},
@@ -371,9 +371,9 @@ func Test_toTable(t *testing.T) {
 				format: formatMarkdownTable.String(),
 				omit:   false,
 			},
-			want: `| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                 | NotAfter                  | CurrentTime               | DaysLeft |
-|------------|------------|-------------|------------------|---------------|------|---------------------------|---------------------------|---------------------------|----------|
-| localhost  |       8443 | \-          | CN=local test CA | local test CA | \-   | 2023-01-01T09:00:00+09:00 | 2025-01-01T09:00:00+09:00 | 2024-01-01T09:00:00+09:00 |      365 |
+			want: `| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                     | NotAfter                      | CurrentTime                   | DaysLeft |
+|------------|------------|-------------|------------------|---------------|------|-------------------------------|-------------------------------|-------------------------------|----------|
+| localhost  |       8443 | \-          | CN=local test CA | local test CA | \-   | 2023-01-01 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST | 2024-01-01 09:00:00 +0900 JST |      365 |
 `,
 			wantErr: false,
 		},
@@ -384,8 +384,8 @@ func Test_toTable(t *testing.T) {
 				format: formatBacklogTable.String(),
 				omit:   false,
 			},
-			want: `| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                 | NotAfter                  | CurrentTime               | DaysLeft |h
-| localhost  |       8443 | -           | CN=local test CA | local test CA | -    | 2023-01-01T09:00:00+09:00 | 2025-01-01T09:00:00+09:00 | 2024-01-01T09:00:00+09:00 |      365 |
+			want: `| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                     | NotAfter                      | CurrentTime                   | DaysLeft |h
+| localhost  |       8443 | -           | CN=local test CA | local test CA | -    | 2023-01-01 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST | 2024-01-01 09:00:00 +0900 JST |      365 |
 `,
 			wantErr: false,
 		},
@@ -396,11 +396,11 @@ func Test_toTable(t *testing.T) {
 				format: formatTextTable.String(),
 				omit:   true,
 			},
-			want: `+------------+------------+-------------+------------------+---------------+------+---------------------------+---------------------------+
-| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                 | NotAfter                  |
-+------------+------------+-------------+------------------+---------------+------+---------------------------+---------------------------+
-| localhost  |       8443 | -           | CN=local test CA | local test CA | -    | 2023-01-01T09:00:00+09:00 | 2025-01-01T09:00:00+09:00 |
-+------------+------------+-------------+------------------+---------------+------+---------------------------+---------------------------+
+			want: `+------------+------------+-------------+------------------+---------------+------+-------------------------------+-------------------------------+
+| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                     | NotAfter                      |
++------------+------------+-------------+------------------+---------------+------+-------------------------------+-------------------------------+
+| localhost  |       8443 | -           | CN=local test CA | local test CA | -    | 2023-01-01 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST |
++------------+------------+-------------+------------------+---------------+------+-------------------------------+-------------------------------+
 `,
 			wantErr: false,
 		},
@@ -411,9 +411,9 @@ func Test_toTable(t *testing.T) {
 				format: formatMarkdownTable.String(),
 				omit:   true,
 			},
-			want: `| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                 | NotAfter                  |
-|------------|------------|-------------|------------------|---------------|------|---------------------------|---------------------------|
-| localhost  |       8443 | \-          | CN=local test CA | local test CA | \-   | 2023-01-01T09:00:00+09:00 | 2025-01-01T09:00:00+09:00 |
+			want: `| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                     | NotAfter                      |
+|------------|------------|-------------|------------------|---------------|------|-------------------------------|-------------------------------|
+| localhost  |       8443 | \-          | CN=local test CA | local test CA | \-   | 2023-01-01 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST |
 `,
 			wantErr: false,
 		},
@@ -424,8 +424,8 @@ func Test_toTable(t *testing.T) {
 				format: formatBacklogTable.String(),
 				omit:   true,
 			},
-			want: `| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                 | NotAfter                  |h
-| localhost  |       8443 | -           | CN=local test CA | local test CA | -    | 2023-01-01T09:00:00+09:00 | 2025-01-01T09:00:00+09:00 |
+			want: `| DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs | NotBefore                     | NotAfter                      |h
+| localhost  |       8443 | -           | CN=local test CA | local test CA | -    | 2023-01-01 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST |
 `,
 			wantErr: false,
 		},

@@ -22,9 +22,9 @@ type certInfo struct {
 	Issuer      string
 	CommonName  string
 	SANs        []string
-	NotBefore   string
-	NotAfter    string
-	CurrentTime string
+	NotBefore   time.Time
+	NotAfter    time.Time
+	CurrentTime time.Time
 	DaysLeft    int
 }
 
@@ -136,9 +136,9 @@ func (c *connector) getServerCert() (*certInfo, error) {
 		Issuer:      cert.Issuer.String(),
 		CommonName:  cert.Subject.CommonName,
 		SANs:        getSANs(cert),
-		NotBefore:   formatTime(cert.NotBefore),
-		NotAfter:    formatTime(cert.NotAfter),
-		CurrentTime: formatTime(now),
+		NotBefore:   cert.NotBefore.In(time.Local),
+		NotAfter:    cert.NotAfter.In(time.Local),
+		CurrentTime: now.In(time.Local).Truncate(time.Second),
 		DaysLeft:    daysLeft(cert.NotAfter, now),
 	}, nil
 }
@@ -176,8 +176,4 @@ func getSANs(cert *x509.Certificate) []string {
 		sans = append(sans, uri.String())
 	}
 	return sans
-}
-
-func formatTime(t time.Time) string {
-	return t.In(time.Local).Format("2006-01-02T15:04:05-07:00")
 }
