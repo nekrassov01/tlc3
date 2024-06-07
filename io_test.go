@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 )
@@ -16,9 +17,9 @@ var input = []*certInfo{
 		Issuer:      "CN=local test CA",
 		CommonName:  "local test CA",
 		SANs:        []string{},
-		NotBefore:   getTime("2023-01-01T09:00:00+09:00"),
-		NotAfter:    getTime("2025-01-01T09:00:00+09:00"),
-		CurrentTime: getTime("2024-01-01T09:00:00+09:00"),
+		NotBefore:   getTime("2023-01-01T09:00:00+09:00", time.Local),
+		NotAfter:    getTime("2025-01-01T09:00:00+09:00", time.Local),
+		CurrentTime: getTime("2024-01-01T09:00:00+09:00", time.Local),
 		DaysLeft:    365,
 	},
 }

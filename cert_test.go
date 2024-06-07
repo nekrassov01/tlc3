@@ -27,21 +27,21 @@ var (
 	addr = host + ":" + port
 )
 
-func getTime(value string) time.Time {
+func getTime(value string, loc *time.Location) time.Time {
 	t, _ := time.Parse(time.RFC3339, value)
-	return t.In(time.Local)
+	return t.In(loc)
 }
 
-func getNotBefore() time.Time {
-	return getTime("2023-01-01T09:00:00+09:00")
+func getNotBefore(loc *time.Location) time.Time {
+	return getTime("2023-01-01T09:00:00+09:00", loc)
 }
 
-func getNotAfter() time.Time {
-	return time.Now().Truncate(time.Hour).In(time.Local).Add(24 * time.Hour)
+func getNotAfter(loc *time.Location) time.Time {
+	return time.Now().Truncate(time.Hour).In(loc).Add(24 * time.Hour)
 }
 
-func getCurrentTime() time.Time {
-	return time.Now().Truncate(time.Hour).In(time.Local)
+func getCurrentTime(loc *time.Location) time.Time {
+	return time.Now().Truncate(time.Hour).In(loc)
 }
 
 func TestMain(m *testing.M) {
@@ -119,8 +119,8 @@ func setupCert(certFile, keyFile string) error {
 	tmpl := x509.Certificate{
 		SerialNumber:          serialNumber,
 		Subject:               pkix.Name{CommonName: "local test CA"},
-		NotBefore:             getNotBefore(),
-		NotAfter:              getNotAfter(),
+		NotBefore:             getNotBefore(time.Local),
+		NotAfter:              getNotAfter(time.Local),
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
@@ -208,6 +208,7 @@ func Test_getCertList(t *testing.T) {
 		ctx      context.Context
 		addrs    []string
 		timeout  time.Duration
+		location *time.Location
 		insecure bool
 	}
 	tests := []struct {
@@ -222,6 +223,7 @@ func Test_getCertList(t *testing.T) {
 				ctx:      ctx,
 				addrs:    []string{addr},
 				timeout:  5 * time.Second,
+				location: time.Local,
 				insecure: true,
 			},
 			want: []*certInfo{
@@ -232,9 +234,34 @@ func Test_getCertList(t *testing.T) {
 					Issuer:      "CN=local test CA",
 					CommonName:  "local test CA",
 					SANs:        []string{},
-					NotBefore:   getNotBefore(),
-					NotAfter:    getNotAfter(),
-					CurrentTime: getCurrentTime(),
+					NotBefore:   getNotBefore(time.Local),
+					NotAfter:    getNotAfter(time.Local),
+					CurrentTime: getCurrentTime(time.Local),
+					DaysLeft:    1,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "utc",
+			args: args{
+				ctx:      ctx,
+				addrs:    []string{addr},
+				timeout:  5 * time.Second,
+				location: time.UTC,
+				insecure: true,
+			},
+			want: []*certInfo{
+				{
+					DomainName:  host,
+					AccessPort:  port,
+					IPAddresses: []string{"127.0.0.1", "::1"},
+					Issuer:      "CN=local test CA",
+					CommonName:  "local test CA",
+					SANs:        []string{},
+					NotBefore:   getNotBefore(time.UTC),
+					NotAfter:    getNotAfter(time.UTC),
+					CurrentTime: getCurrentTime(time.UTC),
 					DaysLeft:    1,
 				},
 			},
@@ -243,7 +270,7 @@ func Test_getCertList(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getCertList(tt.args.ctx, tt.args.addrs, tt.args.timeout, tt.args.insecure)
+			got, err := getCertList(tt.args.ctx, tt.args.addrs, tt.args.timeout, tt.args.insecure, tt.args.location)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getCertList() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -283,30 +310,30 @@ func Test_getCertList(t *testing.T) {
 func Test_newConnector(t *testing.T) {
 	type args struct {
 		addr     string
-		host     string
-		port     string
 		timeout  time.Duration
+		location *time.Location
 		insecure bool
 	}
 	tests := []struct {
-		name string
-		args args
-		want *connector
+		name    string
+		args    args
+		want    *connector
+		wantErr bool
 	}{
 		{
 			name: "basic",
 			args: args{
 				addr:     addr,
-				host:     host,
-				port:     port,
 				timeout:  5 * time.Second,
+				location: time.Local,
 				insecure: false,
 			},
 			want: &connector{
-				addr:    addr,
-				host:    host,
-				port:    port,
-				timeout: 5 * time.Second,
+				addr:     addr,
+				host:     host,
+				port:     port,
+				timeout:  5 * time.Second,
+				location: time.Local,
 				tlsConfig: &tls.Config{
 					ServerName:         host,
 					MinVersion:         tls.VersionTLS12,
@@ -317,8 +344,13 @@ func Test_newConnector(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := newConnector(tt.args.addr, tt.args.host, tt.args.port, tt.args.timeout, tt.args.insecure); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("newConnector() = %v, want %v", got, tt.want)
+			got, err := newConnector(tt.args.addr, tt.args.timeout, tt.args.insecure, tt.args.location)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("newConnector() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("newConnector() gotHost = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -483,6 +515,7 @@ func Test_connector_getServerCert(t *testing.T) {
 		port      string
 		ips       []string
 		timeout   time.Duration
+		location  *time.Location
 		tlsConfig *tls.Config
 		tlsConn   *tls.Conn
 	}
@@ -495,11 +528,12 @@ func Test_connector_getServerCert(t *testing.T) {
 		{
 			name: "basic",
 			fields: fields{
-				addr:    addr,
-				host:    host,
-				port:    port,
-				ips:     []string{},
-				timeout: 5 * time.Second,
+				addr:     addr,
+				host:     host,
+				port:     port,
+				ips:      []string{},
+				timeout:  5 * time.Second,
+				location: time.Local,
 				tlsConfig: &tls.Config{
 					ServerName:         host,
 					MinVersion:         tls.VersionTLS12,
@@ -513,9 +547,38 @@ func Test_connector_getServerCert(t *testing.T) {
 				Issuer:      "CN=local test CA",
 				CommonName:  "local test CA",
 				SANs:        []string{},
-				NotBefore:   getNotBefore(),
-				NotAfter:    getNotAfter(),
-				CurrentTime: getCurrentTime(),
+				NotBefore:   getNotBefore(time.Local),
+				NotAfter:    getNotAfter(time.Local),
+				CurrentTime: getCurrentTime(time.Local),
+				DaysLeft:    1,
+			},
+			wantErr: false,
+		},
+		{
+			name: "utc",
+			fields: fields{
+				addr:     addr,
+				host:     host,
+				port:     port,
+				ips:      []string{},
+				timeout:  5 * time.Second,
+				location: time.UTC,
+				tlsConfig: &tls.Config{
+					ServerName:         host,
+					MinVersion:         tls.VersionTLS12,
+					InsecureSkipVerify: true, // #nosec G402
+				},
+			},
+			want: &certInfo{
+				DomainName:  host,
+				AccessPort:  port,
+				IPAddresses: []string{},
+				Issuer:      "CN=local test CA",
+				CommonName:  "local test CA",
+				SANs:        []string{},
+				NotBefore:   getNotBefore(time.UTC),
+				NotAfter:    getNotAfter(time.UTC),
+				CurrentTime: getCurrentTime(time.UTC),
 				DaysLeft:    1,
 			},
 			wantErr: false,
@@ -529,6 +592,7 @@ func Test_connector_getServerCert(t *testing.T) {
 				port:      tt.fields.port,
 				ips:       tt.fields.ips,
 				timeout:   tt.fields.timeout,
+				location:  tt.fields.location,
 				tlsConfig: tt.fields.tlsConfig,
 				tlsConn:   tt.fields.tlsConn,
 			}

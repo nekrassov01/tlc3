@@ -101,6 +101,11 @@ func Test_cli(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "timezone",
+			args:    []string{Name, insecure, "-d", addr, "-z", "UTC"},
+			wantErr: false,
+		},
+		{
 			name:    "completion bash",
 			args:    []string{Name, "-c", "bash"},
 			wantErr: false,

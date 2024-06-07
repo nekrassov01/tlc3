@@ -1,9 +1,10 @@
 package main
 
 import (
+	"cmp"
 	"fmt"
 	"os"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -26,6 +27,7 @@ type dest struct {
 	timeout    time.Duration
 	insecure   bool
 	noTimeInfo bool
+	timeZone   string
 }
 
 type flag struct {
@@ -36,6 +38,7 @@ type flag struct {
 	timeout    *cli.DurationFlag
 	insecure   *cli.BoolFlag
 	noTimeInfo *cli.BoolFlag
+	timeZone   *cli.StringFlag
 }
 
 func newApp() *app {
@@ -86,6 +89,13 @@ func newApp() *app {
 		Destination: &a.dest.noTimeInfo,
 		Value:       false,
 	}
+	a.flag.timeZone = &cli.StringFlag{
+		Name:        "timezone",
+		Aliases:     []string{"z"},
+		Usage:       "time zone for datetime fields",
+		Destination: &a.dest.timeZone,
+		Value:       "Local",
+	}
 	a.cli = &cli.App{
 		Name:                 Name,
 		Usage:                "TLS cert checker CLI",
@@ -95,7 +105,7 @@ func newApp() *app {
 		EnableBashCompletion: true,
 		Before:               a.before,
 		Action:               a.action,
-		Flags:                []cli.Flag{a.flag.completion, a.flag.domain, a.flag.list, a.flag.output, a.flag.timeout, a.flag.insecure, a.flag.noTimeInfo},
+		Flags:                []cli.Flag{a.flag.completion, a.flag.domain, a.flag.list, a.flag.output, a.flag.timeout, a.flag.insecure, a.flag.noTimeInfo, a.flag.timeZone},
 	}
 	return &a
 }
@@ -117,12 +127,16 @@ func (a *app) action(c *cli.Context) error {
 	default:
 		return fmt.Errorf("cannot parse flags: cannot receive domain names from %s or %s", a.flag.domain.Name, a.flag.list.Name)
 	}
-	list, err := getCertList(c.Context, domains, a.dest.timeout, a.dest.insecure)
+	loc, err := time.LoadLocation(a.dest.timeZone)
+	if err != nil {
+		return fmt.Errorf("cannot parse flags: cannot load timezone \"%s\"", a.dest.timeZone)
+	}
+	list, err := getCertList(c.Context, domains, a.dest.timeout, a.dest.insecure, loc)
 	if err != nil {
 		return err
 	}
-	sort.Slice(list, func(i, j int) bool {
-		return list[i].DomainName < list[j].DomainName
+	slices.SortFunc(list, func(a, b *certInfo) int {
+		return cmp.Compare(a.DomainName, b.DomainName)
 	})
 	return out(list, os.Stdout, a.dest.output, a.dest.noTimeInfo)
 }

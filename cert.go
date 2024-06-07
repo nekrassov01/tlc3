@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net"
 	"runtime"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -28,7 +28,7 @@ type certInfo struct {
 	DaysLeft    int
 }
 
-func getCertList(ctx context.Context, addrs []string, timeout time.Duration, insecure bool) ([]*certInfo, error) {
+func getCertList(ctx context.Context, addrs []string, timeout time.Duration, insecure bool, location *time.Location) ([]*certInfo, error) {
 	res := make([]*certInfo, len(addrs))
 	sem := semaphore.NewWeighted(int64(runtime.NumCPU()))
 	eg, ctx := errgroup.WithContext(ctx)
@@ -39,21 +39,19 @@ func getCertList(ctx context.Context, addrs []string, timeout time.Duration, ins
 		}
 		eg.Go(func() error {
 			defer sem.Release(1)
-			addr = ensureDefaultPort(addr)
-			host, port, err := ensureHostPort(addr)
+			conn, err := newConnector(addr, timeout, insecure, location)
 			if err != nil {
 				return err
 			}
-			connector := newConnector(addr, host, port, timeout, insecure)
-			connector.lookupIP(ctx)
-			if err := connector.getTLSConn(ctx); err != nil {
+			if err := conn.getTLSConn(ctx); err != nil {
 				return err
 			}
-			info, err := connector.getServerCert()
+			conn.lookupIP(ctx)
+			info, err := conn.getServerCert()
 			if err != nil {
 				return err
 			}
-			defer connector.tlsConn.Close()
+			defer conn.tlsConn.Close()
 			res[i] = info
 			return nil
 		})
@@ -70,22 +68,30 @@ type connector struct {
 	port      string
 	ips       []string
 	timeout   time.Duration
+	location  *time.Location
 	tlsConfig *tls.Config
 	tlsConn   *tls.Conn
 }
 
-func newConnector(addr, host, port string, timeout time.Duration, insecure bool) *connector {
-	return &connector{
-		addr:    addr,
-		host:    host,
-		port:    port,
-		timeout: timeout,
+func newConnector(addr string, timeout time.Duration, insecure bool, location *time.Location) (*connector, error) {
+	addr = ensureDefaultPort(addr)
+	host, port, err := ensureHostPort(addr)
+	if err != nil {
+		return nil, err
+	}
+	conn := &connector{
+		addr:     addr,
+		host:     host,
+		port:     port,
+		timeout:  timeout,
+		location: location,
 		tlsConfig: &tls.Config{
 			ServerName:         host,
 			MinVersion:         tls.VersionTLS12,
 			InsecureSkipVerify: insecure, // #nosec G402
 		},
 	}
+	return conn, nil
 }
 
 // Since IP address lookup is not the primary responsibility of this application,
@@ -101,9 +107,7 @@ func (c *connector) lookupIP(ctx context.Context) {
 	for _, ip := range ips {
 		c.ips = append(c.ips, ip.String())
 	}
-	sort.Slice(c.ips, func(i, j int) bool {
-		return c.ips[i] < c.ips[j]
-	})
+	slices.Sort(c.ips)
 }
 
 func (c *connector) getTLSConn(ctx context.Context) error {
@@ -129,18 +133,19 @@ func (c *connector) getServerCert() (*certInfo, error) {
 	}
 	cert := certs[0]
 	now := time.Now()
-	return &certInfo{
+	info := &certInfo{
 		DomainName:  c.host,
 		AccessPort:  c.port,
 		IPAddresses: c.ips,
 		Issuer:      cert.Issuer.String(),
 		CommonName:  cert.Subject.CommonName,
 		SANs:        getSANs(cert),
-		NotBefore:   cert.NotBefore.In(time.Local),
-		NotAfter:    cert.NotAfter.In(time.Local),
-		CurrentTime: now.In(time.Local).Truncate(time.Second),
+		NotBefore:   cert.NotBefore.In(c.location),
+		NotAfter:    cert.NotAfter.In(c.location),
+		CurrentTime: now.In(c.location).Truncate(time.Second),
 		DaysLeft:    daysLeft(cert.NotAfter, now),
-	}, nil
+	}
+	return info, nil
 }
 
 func daysLeft(t time.Time, u time.Time) int {
@@ -157,10 +162,10 @@ func ensureDefaultPort(addr string) string {
 func ensureHostPort(addr string) (host, port string, err error) {
 	host, port, err = net.SplitHostPort(addr)
 	if err != nil {
-		return "", "", fmt.Errorf("cannot split host:port for \"%s\": %w", addr, err)
+		return "", "", err
 	}
 	if _, err := net.LookupPort("tcp", port); err != nil {
-		return "", "", fmt.Errorf("invalid port detected on \"%s\": %w", addr, err)
+		return "", "", err
 	}
 	return host, port, nil
 }
