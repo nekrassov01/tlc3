@@ -32,6 +32,7 @@ GLOBAL OPTIONS:
    --timeout value, -t value                              network timeout: ns|us|ms|s|m|h (default: 5s)
    --insecure, -i                                         skip verification of the cert chain and host name (default: false)
    --no-timeinfo, -n                                      hide fields related to the current time in table output (default: false)
+   --timezone value, -z value                             time zone for datetime fields (default: "Local")
    --help, -h                                             show help
    --version, -v                                          print the version
 ```
@@ -60,6 +61,9 @@ tlc3 -d example.com,www.example.com -o markdown -n
 
 # Override timeout value for TLS connection and IP lookup. Default is 5 seconds
 tlc3 -d example.com,www.example.com -t 10s
+
+# Change timezone from local to specified location
+tlc3 -d example.com,www.example.com -z "Asia/Tokyo"
 ```
 
 Warning
