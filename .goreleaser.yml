@@ -49,4 +49,4 @@ brews:
     description: "TLS cert checker CLI"
     homepage: "https://github.com/nekrassov01/tlc3"
     license: "MIT"
-    folder: Formula
+    directory: Formula
