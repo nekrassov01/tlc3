@@ -10,10 +10,16 @@ import (
 	"runtime"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
+)
+
+var (
+	ipCache  sync.Map
+	connPool sync.Pool
 )
 
 type certInfo struct {
@@ -47,12 +53,23 @@ func getCertList(ctx context.Context, addrs []string, timeout time.Duration, ins
 			if err := conn.getTLSConn(ctx); err != nil {
 				return err
 			}
+			defer func() {
+				if conn.tlsConn == nil {
+					return
+				}
+				if err := conn.tlsConn.Handshake(); err != nil {
+					conn.tlsConn.Close()
+					conn.tlsConn = nil
+					return
+				}
+				connPool.Put(conn.tlsConn)
+				conn.tlsConn = nil
+			}()
 			conn.lookupIP(ctx)
 			info, err := conn.getServerCert()
 			if err != nil {
 				return err
 			}
-			defer conn.tlsConn.Close()
 			res[i] = info
 			return nil
 		})
@@ -98,6 +115,10 @@ func newConnector(addr string, timeout time.Duration, insecure bool, location *t
 // Since IP address lookup is not the primary responsibility of this application,
 // it does not return an error but only a zero value in case of failure.
 func (c *connector) lookupIP(ctx context.Context) {
+	if caches, ok := ipCache.Load(c.host); ok {
+		c.ips = caches.([]net.IP)
+		return
+	}
 	ctx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 	var resolver net.Resolver
@@ -109,9 +130,17 @@ func (c *connector) lookupIP(ctx context.Context) {
 	slices.SortFunc(c.ips, func(a, b net.IP) int {
 		return bytes.Compare(a, b)
 	})
+	ipCache.Store(c.host, c.ips)
 }
 
 func (c *connector) getTLSConn(ctx context.Context) error {
+	if conn, ok := connPool.Get().(*tls.Conn); ok && conn != nil {
+		if err := conn.Handshake(); err == nil {
+			c.tlsConn = conn
+			return nil
+		}
+		conn.Close()
+	}
 	ctx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 	dialer := tls.Dialer{Config: c.tlsConfig}
@@ -119,11 +148,12 @@ func (c *connector) getTLSConn(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("cannot connect to \"%s\": %w", c.addr, err)
 	}
-	tlsConn, ok := conn.(*tls.Conn)
+	var ok bool
+	c.tlsConn, ok = conn.(*tls.Conn)
 	if !ok {
+		conn.Close()
 		return fmt.Errorf("connection is not TLS")
 	}
-	c.tlsConn = tlsConn
 	return nil
 }
 

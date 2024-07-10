@@ -26,3 +26,5 @@ cover.*
 /tlc3
 dist/
 *.pem
+*.test
+*.prof

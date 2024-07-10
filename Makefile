@@ -28,7 +28,7 @@ put: build
 	cp $(BIN) $(GOBIN)/$(BIN)
 
 .PHONY: check
-check: test cover golangci-lint govulncheck
+check: test cover bench golangci-lint govulncheck
 
 .PHONY: deps
 deps: deps-lint deps-govulncheck deps-gobump
@@ -58,6 +58,10 @@ test:
 .PHONY: cover
 cover:
 	go tool cover -html=cover.out -o cover.html
+
+.PHONY: bench
+bench:
+	go test -run=^$$ -bench=. -benchmem -count 5 -cpuprofile=cpu.prof -memprofile=mem.prof
 
 .PHONY: golangci-lint
 golangci-lint: deps-lint
@@ -94,3 +98,4 @@ release: check-git
 clean:
 	go clean
 	rm -f $(BIN) cover.out cover.html
+	rm -f cover.out cover.html cpu.prof mem.prof $(BIN).test

@@ -66,6 +66,26 @@ tlc3 -d example.com,www.example.com -t 10s
 tlc3 -d example.com,www.example.com -z "Asia/Tokyo"
 ```
 
+Benchmark
+---------
+
+[A quick benchmark](./benchmark_test.go) after improvement using connection pool
+
+```text
+$ make bench 
+go test -run=^$ -bench=. -benchmem -count 5 -cpuprofile=cpu.prof -memprofile=mem.prof
+goos: darwin
+goarch: arm64
+pkg: github.com/nekrassov01/tlc3
+Benchmark-8       152959             13743 ns/op            1679 B/op         21 allocs/op
+Benchmark-8        90865             14195 ns/op            1697 B/op         21 allocs/op
+Benchmark-8        96865             13927 ns/op            1693 B/op         21 allocs/op
+Benchmark-8       116883             13485 ns/op            1677 B/op         21 allocs/op
+Benchmark-8       108783             12433 ns/op            1646 B/op         20 allocs/op
+PASS
+ok      github.com/nekrassov01/tlc3     11.248s
+```
+
 Warning
 -------
 
