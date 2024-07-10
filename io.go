@@ -73,12 +73,12 @@ func checkLine(line string) (string, error) {
 	return line, nil
 }
 
-func out(input []*certInfo, output io.Writer, format string, omit bool) error {
+func out(in []*certInfo, out io.Writer, format string, omit bool) error {
 	switch format {
 	case formatJSON.String():
-		return toJSON(input, output)
+		return toJSON(in, out)
 	case formatTextTable.String(), formatMarkdownTable.String(), formatBacklogTable.String():
-		return toTable(input, output, format, omit)
+		return toTable(in, out, format, omit)
 	default:
 		return fmt.Errorf(
 			"cannot parse command line flags: invalid format: allowed values: %s",
@@ -87,35 +87,29 @@ func out(input []*certInfo, output io.Writer, format string, omit bool) error {
 	}
 }
 
-func toJSON(input []*certInfo, outut io.Writer) error {
-	b := json.NewEncoder(outut)
+func toJSON(in []*certInfo, out io.Writer) error {
+	b := json.NewEncoder(out)
 	b.SetIndent("", "  ")
-	if err := b.Encode(input); err != nil {
+	if err := b.Encode(in); err != nil {
 		return fmt.Errorf("cannot marshal output as json: %w", err)
 	}
 	return nil
 }
 
-func toTable(input []*certInfo, output io.Writer, format string, omit bool) error {
-	var table *mintab.Table
-	ignore := mintab.WithIgnoreFields([]int{8, 9})
-	markdown := mintab.WithFormat(mintab.FormatMarkdown)
-	backlog := mintab.WithFormat(mintab.FormatBacklog)
-	switch {
-	case omit && format == formatTextTable.String():
-		table = mintab.New(output, ignore)
-	case omit && format == formatMarkdownTable.String():
-		table = mintab.New(output, ignore, markdown)
-	case omit && format == formatBacklogTable.String():
-		table = mintab.New(output, ignore, backlog)
-	case !omit && format == formatTextTable.String():
-		table = mintab.New(output)
-	case !omit && format == formatMarkdownTable.String():
-		table = mintab.New(output, markdown)
-	case !omit && format == formatBacklogTable.String():
-		table = mintab.New(output, backlog)
+func toTable(in []*certInfo, out io.Writer, format string, omit bool) error {
+	opts := make([]mintab.Option, 0, 2)
+	switch format {
+	case formatTextTable.String():
+	case formatMarkdownTable.String():
+		opts = append(opts, mintab.WithFormat(mintab.FormatMarkdown))
+	case formatBacklogTable.String():
+		opts = append(opts, mintab.WithFormat(mintab.FormatBacklog))
 	}
-	if err := table.Load(input); err != nil {
+	if omit {
+		opts = append(opts, mintab.WithIgnoreFields([]int{8, 9}))
+	}
+	table := mintab.New(out, opts...)
+	if err := table.Load(in); err != nil {
 		return fmt.Errorf("cannot convert output to table: %w", err)
 	}
 	table.Out()
