@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -18,7 +19,7 @@ import (
 type certInfo struct {
 	DomainName  string
 	AccessPort  string
-	IPAddresses []string
+	IPAddresses []net.IP
 	Issuer      string
 	CommonName  string
 	SANs        []string
@@ -66,7 +67,7 @@ type connector struct {
 	addr      string
 	host      string
 	port      string
-	ips       []string
+	ips       []net.IP
 	timeout   time.Duration
 	location  *time.Location
 	tlsConfig *tls.Config
@@ -99,15 +100,15 @@ func newConnector(addr string, timeout time.Duration, insecure bool, location *t
 func (c *connector) lookupIP(ctx context.Context) {
 	ctx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
-	resolver := net.Resolver{}
+	var resolver net.Resolver
 	ips, err := resolver.LookupIP(ctx, "ip", c.host)
 	if err != nil {
-		c.ips = []string{}
+		c.ips = nil
 	}
-	for _, ip := range ips {
-		c.ips = append(c.ips, ip.String())
-	}
-	slices.Sort(c.ips)
+	c.ips = ips
+	slices.SortFunc(c.ips, func(a, b net.IP) int {
+		return bytes.Compare(a, b)
+	})
 }
 
 func (c *connector) getTLSConn(ctx context.Context) error {

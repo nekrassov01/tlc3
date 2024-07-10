@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"net"
 	"reflect"
 	"testing"
 	"time"
@@ -13,7 +14,7 @@ var input = []*certInfo{
 	{
 		DomainName:  host,
 		AccessPort:  port,
-		IPAddresses: []string{},
+		IPAddresses: []net.IP{},
 		Issuer:      "CN=local test CA",
 		CommonName:  "local test CA",
 		SANs:        []string{},

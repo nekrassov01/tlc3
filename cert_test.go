@@ -19,6 +19,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 var (
@@ -230,7 +232,7 @@ func Test_getCertList(t *testing.T) {
 				{
 					DomainName:  host,
 					AccessPort:  port,
-					IPAddresses: []string{"127.0.0.1", "::1"},
+					IPAddresses: []net.IP{net.ParseIP("::1"), net.ParseIP("127.0.0.1")},
 					Issuer:      "CN=local test CA",
 					CommonName:  "local test CA",
 					SANs:        []string{},
@@ -255,7 +257,7 @@ func Test_getCertList(t *testing.T) {
 				{
 					DomainName:  host,
 					AccessPort:  port,
-					IPAddresses: []string{"127.0.0.1", "::1"},
+					IPAddresses: []net.IP{net.ParseIP("::1"), net.ParseIP("127.0.0.1")},
 					Issuer:      "CN=local test CA",
 					CommonName:  "local test CA",
 					SANs:        []string{},
@@ -283,8 +285,8 @@ func Test_getCertList(t *testing.T) {
 					if !reflect.DeepEqual(g.AccessPort, w.AccessPort) {
 						t.Errorf("AccessPort = %v, want %v", g.AccessPort, w.AccessPort)
 					}
-					if !reflect.DeepEqual(g.IPAddresses, w.IPAddresses) {
-						t.Errorf("IPAddresses = %v, want %v", g.IPAddresses, w.IPAddresses)
+					if diff := cmp.Diff(g.IPAddresses, w.IPAddresses); diff != "" {
+						t.Errorf(diff)
 					}
 					if !reflect.DeepEqual(g.Issuer, w.Issuer) {
 						t.Errorf("Issuer = %v, want %v", g.Issuer, w.Issuer)
@@ -362,7 +364,7 @@ func Test_connector_lookupIP(t *testing.T) {
 		addr      string
 		host      string
 		port      string
-		ips       []string
+		ips       []net.IP
 		timeout   time.Duration
 		tlsConfig *tls.Config
 		tlsConn   *tls.Conn
@@ -374,7 +376,7 @@ func Test_connector_lookupIP(t *testing.T) {
 		name   string
 		fields fields
 		args   args
-		want   []string
+		want   []net.IP
 	}{
 		{
 			name: "basic",
@@ -390,7 +392,7 @@ func Test_connector_lookupIP(t *testing.T) {
 			args: args{
 				ctx: ctx,
 			},
-			want: []string{"127.0.0.1", "::1"},
+			want: []net.IP{net.ParseIP("::1"), net.ParseIP("127.0.0.1")},
 		},
 		{
 			name: "empty",
@@ -406,7 +408,7 @@ func Test_connector_lookupIP(t *testing.T) {
 			args: args{
 				ctx: ctx,
 			},
-			want: []string{},
+			want: nil,
 		},
 	}
 	for _, tt := range tests {
@@ -421,8 +423,8 @@ func Test_connector_lookupIP(t *testing.T) {
 				tlsConn:   tt.fields.tlsConn,
 			}
 			c.lookupIP(tt.args.ctx)
-			if !reflect.DeepEqual(c.ips, tt.want) {
-				t.Errorf("connector.lookupIP() = %v, want %v", c.ips, tt.want)
+			if diff := cmp.Diff(c.ips, tt.want); diff != "" {
+				t.Errorf(diff)
 			}
 		})
 	}
@@ -434,7 +436,7 @@ func Test_connector_getTLSConn(t *testing.T) {
 		addr      string
 		host      string
 		port      string
-		ips       []string
+		ips       []net.IP
 		timeout   time.Duration
 		tlsConfig *tls.Config
 		tlsConn   *tls.Conn
@@ -513,7 +515,7 @@ func Test_connector_getServerCert(t *testing.T) {
 		addr      string
 		host      string
 		port      string
-		ips       []string
+		ips       []net.IP
 		timeout   time.Duration
 		location  *time.Location
 		tlsConfig *tls.Config
@@ -531,7 +533,7 @@ func Test_connector_getServerCert(t *testing.T) {
 				addr:     addr,
 				host:     host,
 				port:     port,
-				ips:      []string{},
+				ips:      []net.IP{},
 				timeout:  5 * time.Second,
 				location: time.Local,
 				tlsConfig: &tls.Config{
@@ -543,7 +545,7 @@ func Test_connector_getServerCert(t *testing.T) {
 			want: &certInfo{
 				DomainName:  host,
 				AccessPort:  port,
-				IPAddresses: []string{},
+				IPAddresses: []net.IP{},
 				Issuer:      "CN=local test CA",
 				CommonName:  "local test CA",
 				SANs:        []string{},
@@ -560,7 +562,7 @@ func Test_connector_getServerCert(t *testing.T) {
 				addr:     addr,
 				host:     host,
 				port:     port,
-				ips:      []string{},
+				ips:      []net.IP{},
 				timeout:  5 * time.Second,
 				location: time.UTC,
 				tlsConfig: &tls.Config{
@@ -572,7 +574,7 @@ func Test_connector_getServerCert(t *testing.T) {
 			want: &certInfo{
 				DomainName:  host,
 				AccessPort:  port,
-				IPAddresses: []string{},
+				IPAddresses: []net.IP{},
 				Issuer:      "CN=local test CA",
 				CommonName:  "local test CA",
 				SANs:        []string{},
