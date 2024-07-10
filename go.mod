@@ -5,7 +5,7 @@ go 1.22.4
 require (
 	github.com/google/go-cmp v0.6.0
 	github.com/manifoldco/promptui v0.9.0
-	github.com/nekrassov01/mintab v0.0.43
+	github.com/nekrassov01/mintab v0.0.44
 	github.com/urfave/cli/v2 v2.25.7
 	golang.org/x/sync v0.4.0
 )

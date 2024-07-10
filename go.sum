@@ -12,8 +12,8 @@ github.com/manifoldco/promptui v0.9.0 h1:3V4HzJk1TtXW1MTZMP7mdlwbBpIinw3HztaIlYt
 github.com/manifoldco/promptui v0.9.0/go.mod h1:ka04sppxSGFAtxX0qhlYQjISsg9mR4GWtQEhdbn6Pgg=
 github.com/mattn/go-runewidth v0.0.15 h1:UNAjwbU9l54TA3KzvqLGxwWjHmMgBUVhBiTjelZgg3U=
 github.com/mattn/go-runewidth v0.0.15/go.mod h1:Jdepj2loyihRzMpdS35Xk/zdY8IAYHsh153qUoGf23w=
-github.com/nekrassov01/mintab v0.0.43 h1:Wf6P+kKWpobaHk939buw4AjutsqSxT32ALOUI6LsT7o=
-github.com/nekrassov01/mintab v0.0.43/go.mod h1:mOBS91PE4x9II3jjtAB30WMCcTGB7xkHv1fq+WYdUdg=
+github.com/nekrassov01/mintab v0.0.44 h1:uxQtaHbUShCQVY01NQkskRJ5fWnz0zEQoFtB5CMWSDA=
+github.com/nekrassov01/mintab v0.0.44/go.mod h1:mOBS91PE4x9II3jjtAB30WMCcTGB7xkHv1fq+WYdUdg=
 github.com/rivo/uniseg v0.2.0 h1:S1pD9weZBuJdFmowNwbpi7BJ8TNftyUImj/0WQi72jY=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/russross/blackfriday/v2 v2.1.0 h1:JIOH55/0cWyOuilr9/qlrm0BSXldqnqwMsf35Ld67mk=
