@@ -408,7 +408,7 @@ func Test_connector_lookupIP(t *testing.T) {
 			args: args{
 				ctx: ctx,
 			},
-			want: nil,
+			want: []net.IP{},
 		},
 	}
 	for _, tt := range tests {

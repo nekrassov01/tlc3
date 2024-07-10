@@ -101,11 +101,11 @@ func (c *connector) lookupIP(ctx context.Context) {
 	ctx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 	var resolver net.Resolver
-	ips, err := resolver.LookupIP(ctx, "ip", c.host)
+	var err error
+	c.ips, err = resolver.LookupIP(ctx, "ip", c.host)
 	if err != nil {
-		c.ips = nil
+		c.ips = []net.IP{}
 	}
-	c.ips = ips
 	slices.SortFunc(c.ips, func(a, b net.IP) int {
 		return bytes.Compare(a, b)
 	})
