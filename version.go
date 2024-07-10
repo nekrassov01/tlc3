@@ -2,6 +2,6 @@ package main
 
 const Name = "tlc3"
 
-const Version = "0.0.17"
+const Version = "0.0.18"
 
 var Revision = "HEAD"
