@@ -27,7 +27,7 @@ func Test_cli(t *testing.T) {
 		},
 		{
 			name:    "unknown host",
-			args:    []string{Name, insecure, "-d", "localhost"},
+			args:    []string{Name, insecure, "-d", "abc"},
 			wantErr: true,
 		},
 		{

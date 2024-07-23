@@ -413,6 +413,7 @@ func Test_connector_lookupIP(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ipMap.Delete(tt.fields.host)
 			c := &connector{
 				addr:      tt.fields.addr,
 				host:      tt.fields.host,
@@ -493,6 +494,7 @@ func Test_connector_getTLSConn(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			connMap.Delete(tt.fields.host)
 			c := &connector{
 				addr:      tt.fields.addr,
 				host:      tt.fields.host,

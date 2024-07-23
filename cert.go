@@ -18,8 +18,8 @@ import (
 )
 
 var (
-	ipCache  sync.Map
-	connPool sync.Pool
+	ipMap   sync.Map
+	connMap sync.Map
 )
 
 type certInfo struct {
@@ -53,18 +53,7 @@ func getCertList(ctx context.Context, addrs []string, timeout time.Duration, ins
 			if err := conn.getTLSConn(ctx); err != nil {
 				return err
 			}
-			defer func() {
-				if conn.tlsConn == nil {
-					return
-				}
-				if err := conn.tlsConn.Handshake(); err != nil {
-					conn.tlsConn.Close()
-					conn.tlsConn = nil
-					return
-				}
-				connPool.Put(conn.tlsConn)
-				conn.tlsConn = nil
-			}()
+			defer conn.releaseTLSConn()
 			conn.lookupIP(ctx)
 			info, err := conn.getServerCert()
 			if err != nil {
@@ -89,6 +78,7 @@ type connector struct {
 	location  *time.Location
 	tlsConfig *tls.Config
 	tlsConn   *tls.Conn
+	mu        sync.Mutex
 }
 
 func newConnector(addr string, timeout time.Duration, insecure bool, location *time.Location) (*connector, error) {
@@ -115,7 +105,7 @@ func newConnector(addr string, timeout time.Duration, insecure bool, location *t
 // Since IP address lookup is not the primary responsibility of this application,
 // it does not return an error but only a zero value in case of failure.
 func (c *connector) lookupIP(ctx context.Context) {
-	if caches, ok := ipCache.Load(c.host); ok {
+	if caches, ok := ipMap.Load(c.host); ok {
 		c.ips = caches.([]net.IP)
 		return
 	}
@@ -130,16 +120,15 @@ func (c *connector) lookupIP(ctx context.Context) {
 	slices.SortFunc(c.ips, func(a, b net.IP) int {
 		return bytes.Compare(a, b)
 	})
-	ipCache.Store(c.host, c.ips)
+	ipMap.Store(c.host, c.ips)
 }
 
 func (c *connector) getTLSConn(ctx context.Context) error {
-	if conn, ok := connPool.Get().(*tls.Conn); ok && conn != nil {
-		if err := conn.Handshake(); err == nil {
-			c.tlsConn = conn
-			return nil
-		}
-		conn.Close()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if conn, ok := connMap.Load(c.host); ok {
+		c.tlsConn = conn.(*tls.Conn)
+		return nil
 	}
 	ctx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
@@ -154,7 +143,17 @@ func (c *connector) getTLSConn(ctx context.Context) error {
 		conn.Close()
 		return fmt.Errorf("connection is not TLS")
 	}
+	connMap.Store(c.host, c.tlsConn)
 	return nil
+}
+
+func (c *connector) releaseTLSConn() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.tlsConn != nil {
+		connMap.Store(c.host, c.tlsConn)
+		c.tlsConn = nil
+	}
 }
 
 func (c *connector) getServerCert() (*certInfo, error) {
