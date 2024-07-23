@@ -28,7 +28,7 @@ put: build
 	cp $(BIN) $(GOBIN)/$(BIN)
 
 .PHONY: check
-check: test cover bench golangci-lint govulncheck
+check: test cover bench vet golangci-lint govulncheck
 
 .PHONY: deps
 deps: deps-lint deps-govulncheck deps-gobump
@@ -62,6 +62,10 @@ cover:
 .PHONY: bench
 bench:
 	go test -run=^$$ -bench=. -benchmem -count 5 -cpuprofile=cpu.prof -memprofile=mem.prof
+
+.PHONY: vet
+vet:
+	go vet
 
 .PHONY: golangci-lint
 golangci-lint: deps-lint
