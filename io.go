@@ -73,12 +73,12 @@ func checkLine(line string) (string, error) {
 	return line, nil
 }
 
-func out(in []*certInfo, out io.Writer, format string, omit bool) error {
+func out(infos []*certInfo, w io.Writer, format string, omit bool) error {
 	switch format {
 	case formatJSON.String():
-		return toJSON(in, out)
+		return toJSON(infos, w)
 	case formatTextTable.String(), formatMarkdownTable.String(), formatBacklogTable.String():
-		return toTable(in, out, format, omit)
+		return toTable(infos, w, format, omit)
 	default:
 		return fmt.Errorf(
 			"cannot parse command line flags: invalid format: allowed values: %s",
@@ -87,31 +87,65 @@ func out(in []*certInfo, out io.Writer, format string, omit bool) error {
 	}
 }
 
-func toJSON(in []*certInfo, out io.Writer) error {
-	b := json.NewEncoder(out)
+func toJSON(infos []*certInfo, w io.Writer) error {
+	b := json.NewEncoder(w)
 	b.SetIndent("", "  ")
-	if err := b.Encode(in); err != nil {
+	if err := b.Encode(infos); err != nil {
 		return fmt.Errorf("cannot marshal output as json: %w", err)
 	}
 	return nil
 }
 
-func toTable(in []*certInfo, out io.Writer, format string, omit bool) error {
+func toTable(infos []*certInfo, w io.Writer, format string, omit bool) error {
 	opts := make([]mintab.Option, 0, 2)
 	switch format {
 	case formatTextTable.String():
 	case formatMarkdownTable.String():
-		opts = append(opts, mintab.WithFormat(mintab.FormatMarkdown))
+		opts = append(opts, mintab.WithFormat(mintab.MarkdownFormat))
 	case formatBacklogTable.String():
-		opts = append(opts, mintab.WithFormat(mintab.FormatBacklog))
+		opts = append(opts, mintab.WithFormat(mintab.BacklogFormat))
 	}
 	if omit {
 		opts = append(opts, mintab.WithIgnoreFields([]int{8, 9}))
 	}
-	table := mintab.New(out, opts...)
-	if err := table.Load(in); err != nil {
+	table := mintab.New(w, opts...)
+	if err := table.Load(toInput(infos)); err != nil {
 		return fmt.Errorf("cannot convert output to table: %w", err)
 	}
-	table.Out()
+	table.Render()
 	return nil
+}
+
+func toInput(infos []*certInfo) mintab.Input {
+	header := []string{
+		"DomainName",
+		"AccessPort",
+		"IPAddresses",
+		"Issuer",
+		"CommonName",
+		"SANs",
+		"NotBefore",
+		"NotAfter",
+		"CurrentTime",
+		"DaysLeft",
+	}
+	data := make([][]any, len(infos))
+	for i, info := range infos {
+		data[i] = []any{
+			info.DomainName,
+			info.AccessPort,
+			info.IPAddresses,
+			info.Issuer,
+			info.CommonName,
+			info.SANs,
+			info.NotBefore,
+			info.NotAfter,
+			info.CurrentTime,
+			info.DaysLeft,
+		}
+	}
+	return mintab.Input{
+		Header: header,
+		Data:   data,
+	}
 }
