@@ -26,7 +26,7 @@ DESCRIPTION:
 
 GLOBAL OPTIONS:
    --completion value, -c value                           completion scripts: bash|zsh|pwsh
-   --log-level value, -l value                             loglevels: debug|info|warn|error (default: "info") [$TLC3_LOGLEVEL]
+   --log-level value, -l value                            loglevels: debug|info|warn|error (default: "info") [$TLC3_LOGLEVEL]
    --domain value, -d value [ --domain value, -d value ]  domain:port separated by commas
    --file value, -f value                                 path to newline-delimited list of domains
    --output value, -o value                               output format: json|table|markdown|backlog (default: "json") [$TLC3_OUTPUT]
