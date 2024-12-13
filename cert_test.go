@@ -286,7 +286,7 @@ func Test_getCertList(t *testing.T) {
 						t.Errorf("AccessPort = %v, want %v", g.AccessPort, w.AccessPort)
 					}
 					if diff := cmp.Diff(g.IPAddresses, w.IPAddresses); diff != "" {
-						t.Errorf(diff)
+						t.Error(diff)
 					}
 					if !reflect.DeepEqual(g.Issuer, w.Issuer) {
 						t.Errorf("Issuer = %v, want %v", g.Issuer, w.Issuer)
@@ -351,8 +351,23 @@ func Test_newConnector(t *testing.T) {
 				t.Errorf("newConnector() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("newConnector() gotHost = %v, want %v", got, tt.want)
+			if !reflect.DeepEqual(got.addr, tt.want.addr) {
+				t.Errorf("addr = %v, want %v", got.addr, tt.want.addr)
+			}
+			if !reflect.DeepEqual(got.host, tt.want.host) {
+				t.Errorf("host = %v, want %v", got.host, tt.want.host)
+			}
+			if !reflect.DeepEqual(got.port, tt.want.port) {
+				t.Errorf("port = %v, want %v", got.port, tt.want.port)
+			}
+			if !reflect.DeepEqual(got.timeout, tt.want.timeout) {
+				t.Errorf("timeout = %v, want %v", got.timeout, tt.want.timeout)
+			}
+			if !reflect.DeepEqual(got.location, tt.want.location) {
+				t.Errorf("location = %v, want %v", got.location, tt.want.location)
+			}
+			if !reflect.DeepEqual(got.tlsConfig, tt.want.tlsConfig) {
+				t.Errorf("tlsConfig = %v, want %v", got.tlsConfig, tt.want.tlsConfig)
 			}
 		})
 	}
@@ -425,7 +440,7 @@ func Test_connector_lookupIP(t *testing.T) {
 			}
 			c.lookupIP(tt.args.ctx)
 			if diff := cmp.Diff(c.ips, tt.want); diff != "" {
-				t.Errorf(diff)
+				t.Error(diff)
 			}
 		})
 	}

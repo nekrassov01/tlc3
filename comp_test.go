@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	_ "embed"
 	"testing"
 )
@@ -45,7 +46,7 @@ func Test_comp(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := comp(tt.args.s); (err != nil) != tt.wantErr {
+			if err := comp(&bytes.Buffer{}, tt.args.s); (err != nil) != tt.wantErr {
 				t.Errorf("comp() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

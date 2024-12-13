@@ -3,16 +3,17 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"io"
 )
 
 //go:embed completions/tlc3.bash
-var bashCompletion string
+var completionBash string
 
 //go:embed completions/tlc3.zsh
-var zshCompletion string
+var completionZsh string
 
 //go:embed completions/tlc3.ps1
-var pwshCompletion string
+var completionPwsh string
 
 type shell int
 
@@ -35,19 +36,16 @@ func (c shell) String() string {
 	return ""
 }
 
-func comp(s string) error {
+func comp(w io.Writer, s string) error {
 	switch s {
 	case bash.String():
-		fmt.Println(bashCompletion)
+		fmt.Fprintln(w, completionBash)
 	case zsh.String():
-		fmt.Println(zshCompletion)
+		fmt.Fprintln(w, completionZsh)
 	case pwsh.String():
-		fmt.Println(pwshCompletion)
+		fmt.Fprintln(w, completionPwsh)
 	default:
-		return fmt.Errorf(
-			"cannot parse command line flags: invalid completion shell: allowed values: %s",
-			pipeJoin(shells),
-		)
+		return fmt.Errorf("invalid completion shell: allowed values: %s", pipeJoin(shells))
 	}
 	return nil
 }

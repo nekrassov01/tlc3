@@ -333,7 +333,7 @@ func Test_toJSON(t *testing.T) {
 				t.Errorf("\ngot:\n%v\nwant:\n%v\n", output.String(), tt.want)
 			}
 			if diff := cmp.Diff(output.String(), tt.want); diff != "" {
-				t.Errorf(diff)
+				t.Error(diff)
 			}
 		})
 	}

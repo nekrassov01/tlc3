@@ -6,7 +6,7 @@ endif
 GOBIN ?= $(shell go env GOPATH)/bin
 VERSION := $$(make -s show-version)
 REVISION := $(shell git rev-parse --short HEAD)
-LDFLAGS := "-s -w -X main.Version=$(VERSION) -X main.Revision=$(REVISION)"
+LDFLAGS := "-s -w -X main.Version=$(VERSION)"
 
 HAS_LINT := $(shell command -v $(GOBIN)/golangci-lint 2> /dev/null)
 HAS_VULNCHECK := $(shell command -v $(GOBIN)/govulncheck 2> /dev/null)
@@ -21,7 +21,7 @@ export GO111MODULE=on
 .PHONY: build
 build: clean
 	go mod tidy
-	go build -ldflags "-X main.Version=$(VERSION) -X main.Revision=$(REVISION)" -o $(BIN) .
+	go build -ldflags $(LDFLAGS) -o $(BIN) .
 
 .PHONY: put
 put: build

@@ -26,13 +26,14 @@ DESCRIPTION:
 
 GLOBAL OPTIONS:
    --completion value, -c value                           completion scripts: bash|zsh|pwsh
+   --loglevel value, -l value                             loglevels: debug|info|warn|error (default: "info") [$TLC3_LOGLEVEL]
    --domain value, -d value [ --domain value, -d value ]  domain:port separated by commas
-   --list value, -l value                                 path to newline-delimited list of domains
-   --output value, -o value                               output format: json|table|markdown|backlog (default: "json")
-   --timeout value, -t value                              network timeout: ns|us|ms|s|m|h (default: 5s)
+   --file value, -f value                                 path to newline-delimited list of domains
+   --output value, -o value                               output format: json|table|markdown|backlog (default: "json") [$TLC3_OUTPUT]
+   --timeout value, -t value                              network timeout: ns|us|ms|s|m|h (default: 5s) [$TLC3_TIMEOUT]
    --insecure, -i                                         skip verification of the cert chain and host name (default: false)
    --no-timeinfo, -n                                      hide fields related to the current time in table output (default: false)
-   --timezone value, -z value                             time zone for datetime fields (default: "Local")
+   --timezone value, -z value                             time zone for datetime fields (default: "Local") [$TLC3_TIMEZONE]
    --help, -h                                             show help
    --version, -v                                          print the version
 ```

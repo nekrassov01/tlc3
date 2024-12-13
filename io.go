@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -37,11 +38,11 @@ func (f format) String() string {
 
 func fromList(fp string) ([]string, error) {
 	if fp == "" {
-		return nil, fmt.Errorf("no file provided")
+		return nil, errors.New("no file provided")
 	}
 	f, err := os.Open(filepath.Clean(fp))
 	if err != nil {
-		return nil, fmt.Errorf("cannot open file \"%s\": %w", fp, err)
+		return nil, err
 	}
 	defer f.Close()
 	scanner := bufio.NewScanner(f)
@@ -56,10 +57,10 @@ func fromList(fp string) ([]string, error) {
 		}
 	}
 	if len(lines) == 0 {
-		return nil, fmt.Errorf("no line provided")
+		return nil, fmt.Errorf("no line provided: %s", fp)
 	}
 	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("cannot read line: %w", err)
+		return nil, err
 	}
 	return lines, nil
 }
@@ -80,10 +81,7 @@ func out(infos []*certInfo, w io.Writer, format string, omit bool) error {
 	case formatTextTable.String(), formatMarkdownTable.String(), formatBacklogTable.String():
 		return toTable(infos, w, format, omit)
 	default:
-		return fmt.Errorf(
-			"cannot parse command line flags: invalid format: allowed values: %s",
-			pipeJoin(formats),
-		)
+		return fmt.Errorf("invalid format: allowed values: %s", pipeJoin(formats))
 	}
 }
 
@@ -91,7 +89,7 @@ func toJSON(infos []*certInfo, w io.Writer) error {
 	b := json.NewEncoder(w)
 	b.SetIndent("", "  ")
 	if err := b.Encode(infos); err != nil {
-		return fmt.Errorf("cannot marshal output as json: %w", err)
+		return err
 	}
 	return nil
 }
@@ -110,7 +108,7 @@ func toTable(infos []*certInfo, w io.Writer, format string, omit bool) error {
 	}
 	table := mintab.New(w, opts...)
 	if err := table.Load(toInput(infos)); err != nil {
-		return fmt.Errorf("cannot convert output to table: %w", err)
+		return err
 	}
 	table.Render()
 	return nil

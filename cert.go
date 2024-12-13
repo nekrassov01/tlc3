@@ -88,16 +88,16 @@ func newConnector(addr string, timeout time.Duration, insecure bool, location *t
 		return nil, err
 	}
 	conn := &connector{
-		addr:     addr,
-		host:     host,
-		port:     port,
-		timeout:  timeout,
-		location: location,
 		tlsConfig: &tls.Config{
 			ServerName:         host,
 			MinVersion:         tls.VersionTLS12,
 			InsecureSkipVerify: insecure, // #nosec G402
 		},
+		addr:     addr,
+		host:     host,
+		port:     port,
+		timeout:  timeout,
+		location: location,
 	}
 	return conn, nil
 }
@@ -135,7 +135,7 @@ func (c *connector) getTLSConn(ctx context.Context) error {
 	dialer := tls.Dialer{Config: c.tlsConfig}
 	conn, err := dialer.DialContext(ctx, "tcp", c.addr)
 	if err != nil {
-		return fmt.Errorf("cannot connect to \"%s\": %w", c.addr, err)
+		return fmt.Errorf("cannot connect to %q: %w", c.addr, err)
 	}
 	var ok bool
 	c.tlsConn, ok = conn.(*tls.Conn)
@@ -159,7 +159,7 @@ func (c *connector) releaseTLSConn() {
 func (c *connector) getServerCert() (*certInfo, error) {
 	certs := c.tlsConn.ConnectionState().PeerCertificates
 	if len(certs) == 0 {
-		return nil, fmt.Errorf("cannot find cert for \"%s\"", c.host)
+		return nil, fmt.Errorf("cannot find cert for %q", c.host)
 	}
 	cert := certs[0]
 	now := time.Now()
