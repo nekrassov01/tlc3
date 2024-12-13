@@ -88,10 +88,7 @@ func out(infos []*certInfo, w io.Writer, format string, omit bool) error {
 func toJSON(infos []*certInfo, w io.Writer) error {
 	b := json.NewEncoder(w)
 	b.SetIndent("", "  ")
-	if err := b.Encode(infos); err != nil {
-		return err
-	}
-	return nil
+	return b.Encode(infos)
 }
 
 func toTable(infos []*certInfo, w io.Writer, format string, omit bool) error {
