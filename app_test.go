@@ -32,37 +32,37 @@ func Test_cli(t *testing.T) {
 		},
 		{
 			name:    "list",
-			args:    []string{appName, insecure, "-l", filepath.Join("testdata", "1.txt")},
+			args:    []string{appName, insecure, "-f", filepath.Join("testdata", "1.txt")},
 			wantErr: false,
 		},
 		{
 			name:    "list+indent",
-			args:    []string{appName, insecure, "-l", filepath.Join("testdata", "2.txt")},
+			args:    []string{appName, insecure, "-f", filepath.Join("testdata", "2.txt")},
 			wantErr: false,
 		},
 		{
 			name:    "list+newline",
-			args:    []string{appName, insecure, "-l", filepath.Join("testdata", "3.txt")},
+			args:    []string{appName, insecure, "-f", filepath.Join("testdata", "3.txt")},
 			wantErr: false,
 		},
 		{
 			name:    "list+singleQuote",
-			args:    []string{appName, insecure, "-l", filepath.Join("testdata", "4.txt")},
+			args:    []string{appName, insecure, "-f", filepath.Join("testdata", "4.txt")},
 			wantErr: false,
 		},
 		{
 			name:    "list+doubleQuote",
-			args:    []string{appName, insecure, "-l", filepath.Join("testdata", "5.txt")},
+			args:    []string{appName, insecure, "-f", filepath.Join("testdata", "5.txt")},
 			wantErr: false,
 		},
 		{
 			name:    "list+comma",
-			args:    []string{appName, insecure, "-l", filepath.Join("testdata", "6.txt")},
+			args:    []string{appName, insecure, "-f", filepath.Join("testdata", "6.txt")},
 			wantErr: true,
 		},
 		{
 			name:    "list+blank",
-			args:    []string{appName, insecure, "-l", filepath.Join("testdata", "7.txt")},
+			args:    []string{appName, insecure, "-f", filepath.Join("testdata", "7.txt")},
 			wantErr: true,
 		},
 		{
