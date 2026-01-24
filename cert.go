@@ -144,7 +144,7 @@ func (c *connector) connect(ctx context.Context) error {
 	var ok bool
 	c.conn, ok = conn.(*tls.Conn)
 	if !ok {
-		conn.Close()
+		_ = conn.Close()
 		return fmt.Errorf("connection is not TLS")
 	}
 	connMap.Store(c.host, c.conn)

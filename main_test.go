@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"math/big"
 	"net/http"
@@ -123,7 +124,9 @@ func setupCert(certFile, keyFile string) error {
 	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
 		return err
 	}
-	certOut.Close()
+	if err := certOut.Close(); err != nil {
+		return err
+	}
 
 	// convert private key
 	privBytes, err := x509.MarshalPKCS8PrivateKey(privKey)
@@ -139,7 +142,9 @@ func setupCert(certFile, keyFile string) error {
 	if err := pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privBytes}); err != nil {
 		return err
 	}
-	keyOut.Close()
+	if err := keyOut.Close(); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -147,7 +152,6 @@ func setupCert(certFile, keyFile string) error {
 func setupServer(addr string) *http.Server {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "test server")
 	})
 	tlsConfig := &tls.Config{
 		MinVersion:         tls.VersionTLS12,
@@ -169,7 +173,7 @@ func waitServer(addr string, timeout time.Duration) error {
 			InsecureSkipVerify: true, // #nosec G402
 		})
 		if err == nil {
-			conn.Close()
+			_ = conn.Close()
 			return nil
 		}
 		time.Sleep(100 * time.Millisecond)
@@ -178,9 +182,13 @@ func waitServer(addr string, timeout time.Duration) error {
 }
 
 func teardown(server *http.Server, tempDir string) error {
-	defer os.RemoveAll(tempDir)
-	if err := server.Shutdown(context.Background()); err != nil {
-		return fmt.Errorf("cannot shutdown server: %w", err)
+	err1 := server.Shutdown(context.Background())
+	err2 := os.RemoveAll(tempDir)
+	if err1 == nil {
+		return err2
 	}
-	return nil
+	if err2 == nil {
+		return err1
+	}
+	return errors.Join(err1, err2)
 }
