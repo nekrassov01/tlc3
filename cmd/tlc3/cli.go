@@ -55,7 +55,7 @@ func newCmd(w, ew io.Writer) *cli.Command {
 		Aliases: []string{"o"},
 		Usage:   "set output type",
 		Sources: cli.EnvVars(label + "_OUTPUT_TYPE"),
-		Value:   tlc3.OutputTypeCompressedText.String(),
+		Value:   tlc3.OutputTypeText.String(),
 	}
 
 	timeout := &cli.DurationFlag{
@@ -179,7 +179,7 @@ func newCmd(w, ew io.Writer) *cli.Command {
 		Name:                  name,
 		Version:               getVersion(),
 		Usage:                 "TLS cert checker CLI",
-		Description:           "CLI application for checking TLS certificate information",
+		Description:           "CLI application for checking TLS certificate informations",
 		HideHelpCommand:       true,
 		EnableShellCompletion: true,
 		Writer:                w,
