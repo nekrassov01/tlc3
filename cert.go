@@ -39,36 +39,53 @@ type CertInfo struct {
 
 // GetCerts retrieves certificate information for the given addresses.
 func GetCerts(ctx context.Context, addrs []string, timeout time.Duration, insecure bool, location *time.Location) ([]*CertInfo, error) {
-	res := make([]*CertInfo, len(addrs))
+	result := make([]*CertInfo, len(addrs))
+
+	// function to process each address
+	fn := func(i int, addr string) error {
+		conn, err := newConnector(addr, timeout, insecure, location)
+		if err != nil {
+			return err
+		}
+		if err := conn.connect(ctx); err != nil {
+			return err
+		}
+		defer conn.release()
+		conn.lookupIP(ctx)
+		info, err := conn.getCert()
+		if err != nil {
+			return err
+		}
+		result[i] = info
+		return nil
+	}
+
+	// when only one address is provided, process it directly
+	if len(addrs) == 1 {
+		if err := fn(0, addrs[0]); err != nil {
+			return nil, err
+		}
+		return result[:1], nil
+	}
+
+	// process multiple addresses concurrently
 	sem := semaphore.NewWeighted(int64(runtime.NumCPU()))
 	eg, ctx := errgroup.WithContext(ctx)
 	for i, addr := range addrs {
 		if err := sem.Acquire(ctx, 1); err != nil {
 			return nil, err
 		}
+		i := i
+		addr := addr
 		eg.Go(func() error {
 			defer sem.Release(1)
-			conn, err := newConnector(addr, timeout, insecure, location)
-			if err != nil {
-				return err
-			}
-			if err := conn.connect(ctx); err != nil {
-				return err
-			}
-			defer conn.release()
-			conn.lookupIP(ctx)
-			info, err := conn.getCert()
-			if err != nil {
-				return err
-			}
-			res[i] = info
-			return nil
+			return fn(i, addr)
 		})
 	}
 	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
-	return res, nil
+	return result, nil
 }
 
 // connector handles TLS connection and certificate retrieval.
@@ -116,9 +133,10 @@ func (c *connector) connect(ctx context.Context) error {
 		c.conn = conn.(*tls.Conn)
 		return nil
 	}
-	ctx, cancel := context.WithTimeout(ctx, c.timeout)
-	defer cancel()
-	dialer := tls.Dialer{Config: c.config}
+	dialer := tls.Dialer{
+		Config:    c.config,
+		NetDialer: &net.Dialer{Timeout: c.timeout},
+	}
 	conn, err := dialer.DialContext(ctx, "tcp", c.addr)
 	if err != nil {
 		return fmt.Errorf("cannot connect to %q: %w", c.addr, err)
@@ -177,8 +195,6 @@ func (c *connector) lookupIP(ctx context.Context) {
 		c.ips = caches.([]netip.Addr)
 		return
 	}
-	ctx, cancel := context.WithTimeout(ctx, c.timeout)
-	defer cancel()
 	var resolver net.Resolver
 	var err error
 	c.ips, err = resolver.LookupNetIP(ctx, "ip", c.host)
