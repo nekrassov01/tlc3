@@ -1,4 +1,4 @@
-package main
+package tlc3
 
 import (
 	"bufio"
@@ -36,7 +36,7 @@ func (f format) String() string {
 	return ""
 }
 
-func fromList(fp string) ([]string, error) {
+func FromList(fp string) ([]string, error) {
 	if fp == "" {
 		return nil, errors.New("no file provided")
 	}
@@ -74,24 +74,24 @@ func checkLine(line string) (string, error) {
 	return line, nil
 }
 
-func out(infos []*certInfo, w io.Writer, format string, omit bool) error {
+func Out(infos []*CertInfo, w io.Writer, format string, omit bool) error {
 	switch format {
 	case formatJSON.String():
 		return toJSON(infos, w)
 	case formatTextTable.String(), formatMarkdownTable.String(), formatBacklogTable.String():
 		return toTable(infos, w, format, omit)
 	default:
-		return fmt.Errorf("invalid format: allowed values: %s", pipeJoin(formats))
+		return fmt.Errorf("invalid format: %s", format)
 	}
 }
 
-func toJSON(infos []*certInfo, w io.Writer) error {
+func toJSON(infos []*CertInfo, w io.Writer) error {
 	b := json.NewEncoder(w)
 	b.SetIndent("", "  ")
 	return b.Encode(infos)
 }
 
-func toTable(infos []*certInfo, w io.Writer, format string, omit bool) error {
+func toTable(infos []*CertInfo, w io.Writer, format string, omit bool) error {
 	opts := make([]mintab.Option, 0, 2)
 	switch format {
 	case formatTextTable.String():
@@ -111,7 +111,7 @@ func toTable(infos []*certInfo, w io.Writer, format string, omit bool) error {
 	return nil
 }
 
-func toInput(infos []*certInfo) mintab.Input {
+func toInput(infos []*CertInfo) mintab.Input {
 	header := []string{
 		"DomainName",
 		"AccessPort",

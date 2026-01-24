@@ -1,4 +1,4 @@
-package main
+package tlc3
 
 import (
 	"bytes"
@@ -22,7 +22,7 @@ var (
 	connMap sync.Map
 )
 
-type certInfo struct {
+type CertInfo struct {
 	DomainName  string
 	AccessPort  string
 	IPAddresses []net.IP
@@ -35,12 +35,11 @@ type certInfo struct {
 	DaysLeft    int
 }
 
-func getCertList(ctx context.Context, addrs []string, timeout time.Duration, insecure bool, location *time.Location) ([]*certInfo, error) {
-	res := make([]*certInfo, len(addrs))
+func GetCertList(ctx context.Context, addrs []string, timeout time.Duration, insecure bool, location *time.Location) ([]*CertInfo, error) {
+	res := make([]*CertInfo, len(addrs))
 	sem := semaphore.NewWeighted(int64(runtime.NumCPU()))
 	eg, ctx := errgroup.WithContext(ctx)
 	for i, addr := range addrs {
-		i, addr := i, addr
 		if err := sem.Acquire(ctx, 1); err != nil {
 			return nil, err
 		}
@@ -156,14 +155,14 @@ func (c *connector) releaseTLSConn() {
 	}
 }
 
-func (c *connector) getServerCert() (*certInfo, error) {
+func (c *connector) getServerCert() (*CertInfo, error) {
 	certs := c.tlsConn.ConnectionState().PeerCertificates
 	if len(certs) == 0 {
 		return nil, fmt.Errorf("cannot find cert for %q", c.host)
 	}
 	cert := certs[0]
 	now := time.Now()
-	info := &certInfo{
+	info := &CertInfo{
 		DomainName:  c.host,
 		AccessPort:  c.port,
 		IPAddresses: c.ips,

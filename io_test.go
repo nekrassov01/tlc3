@@ -1,4 +1,4 @@
-package main
+package tlc3
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-var input = []*certInfo{
+var input = []*CertInfo{
 	{
 		DomainName:  host,
 		AccessPort:  port,
@@ -25,7 +25,7 @@ var input = []*certInfo{
 	},
 }
 
-func Test_fromList(t *testing.T) {
+func Test_FromList(t *testing.T) {
 	type args struct {
 		fp string
 	}
@@ -102,7 +102,7 @@ func Test_fromList(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := fromList(tt.args.fp)
+			got, err := FromList(tt.args.fp)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("\ngot:\n%v\nwant:\n%v\n", err, tt.wantErr)
 				return
@@ -114,9 +114,9 @@ func Test_fromList(t *testing.T) {
 	}
 }
 
-func Test_out(t *testing.T) {
+func Test_Out(t *testing.T) {
 	type args struct {
-		input  []*certInfo
+		input  []*CertInfo
 		format string
 		omit   bool
 	}
@@ -278,7 +278,7 @@ func Test_out(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			output := &bytes.Buffer{}
-			if err := out(tt.args.input, output, tt.args.format, tt.args.omit); (err != nil) != tt.wantErr {
+			if err := Out(tt.args.input, output, tt.args.format, tt.args.omit); (err != nil) != tt.wantErr {
 				t.Errorf("\ngot:\n%v\nwant:\n%v\n", err, tt.wantErr)
 				return
 			}
@@ -291,7 +291,7 @@ func Test_out(t *testing.T) {
 
 func Test_toJSON(t *testing.T) {
 	type args struct {
-		input []*certInfo
+		input []*CertInfo
 	}
 	tests := []struct {
 		name    string
@@ -341,7 +341,7 @@ func Test_toJSON(t *testing.T) {
 
 func Test_toTable(t *testing.T) {
 	type args struct {
-		input  []*certInfo
+		input  []*CertInfo
 		format string
 		omit   bool
 	}

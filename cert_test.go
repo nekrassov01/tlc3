@@ -1,4 +1,4 @@
-package main
+package tlc3
 
 import (
 	"context"
@@ -204,7 +204,7 @@ func teardown(server *http.Server, tempDir string) error {
 	return nil
 }
 
-func Test_getCertList(t *testing.T) {
+func Test_GetCertList(t *testing.T) {
 	ctx := context.Background()
 	type args struct {
 		ctx      context.Context
@@ -216,7 +216,7 @@ func Test_getCertList(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    []*certInfo
+		want    []*CertInfo
 		wantErr bool
 	}{
 		{
@@ -228,7 +228,7 @@ func Test_getCertList(t *testing.T) {
 				location: time.Local,
 				insecure: true,
 			},
-			want: []*certInfo{
+			want: []*CertInfo{
 				{
 					DomainName:  host,
 					AccessPort:  port,
@@ -253,7 +253,7 @@ func Test_getCertList(t *testing.T) {
 				location: time.UTC,
 				insecure: true,
 			},
-			want: []*certInfo{
+			want: []*CertInfo{
 				{
 					DomainName:  host,
 					AccessPort:  port,
@@ -272,7 +272,7 @@ func Test_getCertList(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getCertList(tt.args.ctx, tt.args.addrs, tt.args.timeout, tt.args.insecure, tt.args.location)
+			got, err := GetCertList(tt.args.ctx, tt.args.addrs, tt.args.timeout, tt.args.insecure, tt.args.location)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getCertList() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -541,7 +541,7 @@ func Test_connector_getServerCert(t *testing.T) {
 	tests := []struct {
 		name    string
 		fields  fields
-		want    *certInfo
+		want    *CertInfo
 		wantErr bool
 	}{
 		{
@@ -559,7 +559,7 @@ func Test_connector_getServerCert(t *testing.T) {
 					InsecureSkipVerify: true, // #nosec G402
 				},
 			},
-			want: &certInfo{
+			want: &CertInfo{
 				DomainName:  host,
 				AccessPort:  port,
 				IPAddresses: []net.IP{},
@@ -588,7 +588,7 @@ func Test_connector_getServerCert(t *testing.T) {
 					InsecureSkipVerify: true, // #nosec G402
 				},
 			},
-			want: &certInfo{
+			want: &CertInfo{
 				DomainName:  host,
 				AccessPort:  port,
 				IPAddresses: []net.IP{},
