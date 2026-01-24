@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func Test_GetDomainsFromFile(t *testing.T) {
+func Test_GetAddressesFromFile(t *testing.T) {
 	type args struct {
 		fp string
 	}
@@ -82,13 +82,13 @@ func Test_GetDomainsFromFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetDomainsFromFile(tt.args.fp)
+			got, err := GetAddressesFromFile(tt.args.fp)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetDomainsFromFile() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetAddressesFromFile() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetDomainsFromFile() got = %v, want = %v", got, tt.want)
+				t.Errorf("GetAddressesFromFile() got = %v, want = %v", got, tt.want)
 			}
 		})
 	}

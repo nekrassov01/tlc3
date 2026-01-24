@@ -17,17 +17,17 @@ func Test_cli(t *testing.T) {
 	}{
 		{
 			name:    "basic",
-			args:    []string{name, insecure, "-d", "example.com"},
+			args:    []string{name, insecure, "-a", "example.com"},
 			wantErr: false,
 		},
 		{
 			name:    "blank host",
-			args:    []string{name, insecure, "-d", ""},
+			args:    []string{name, insecure, "-a", ""},
 			wantErr: true,
 		},
 		{
 			name:    "unknown host",
-			args:    []string{name, insecure, "-d", "abc"},
+			args:    []string{name, insecure, "-a", "abc"},
 			wantErr: true,
 		},
 		{
@@ -67,42 +67,42 @@ func Test_cli(t *testing.T) {
 		},
 		{
 			name:    "timeout",
-			args:    []string{name, insecure, "-d", "example.com", "-t", "10s"},
+			args:    []string{name, insecure, "-a", "example.com", "-t", "10s"},
 			wantErr: false,
 		},
 		{
 			name:    "timeout invalid string",
-			args:    []string{name, insecure, "-d", "example.com", "-t", "5"},
+			args:    []string{name, insecure, "-a", "example.com", "-t", "5"},
 			wantErr: true,
 		},
 		{
 			name:    "output json",
-			args:    []string{name, insecure, "-d", "example.com", "-o", "json"},
+			args:    []string{name, insecure, "-a", "example.com", "-o", "json"},
 			wantErr: false,
 		},
 		{
 			name:    "output markdown",
-			args:    []string{name, insecure, "-d", "example.com", "-o", "markdown"},
+			args:    []string{name, insecure, "-a", "example.com", "-o", "markdown"},
 			wantErr: false,
 		},
 		{
 			name:    "output backlog",
-			args:    []string{name, insecure, "-d", "example.com", "-o", "backlog"},
+			args:    []string{name, insecure, "-a", "example.com", "-o", "backlog"},
 			wantErr: false,
 		},
 		{
 			name:    "output unknown format",
-			args:    []string{name, insecure, "-d", "example.com", "-o", "unknown"},
+			args:    []string{name, insecure, "-a", "example.com", "-o", "unknown"},
 			wantErr: true,
 		},
 		{
-			name:    "no timeinfo",
-			args:    []string{name, insecure, "-d", "example.com", "-n"},
+			name:    "static",
+			args:    []string{name, insecure, "-a", "example.com", "-s"},
 			wantErr: false,
 		},
 		{
 			name:    "timezone",
-			args:    []string{name, insecure, "-d", "example.com", "-z", "UTC"},
+			args:    []string{name, insecure, "-a", "example.com", "-z", "UTC"},
 			wantErr: false,
 		},
 		{

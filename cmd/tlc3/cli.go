@@ -38,16 +38,16 @@ func newCmd(w, ew io.Writer) *cli.Command {
 		Value:   slog.LevelInfo.String(),
 	}
 
-	domain := &cli.StringSliceFlag{
-		Name:    "domain",
-		Aliases: []string{"d"},
+	addr := &cli.StringSliceFlag{
+		Name:    "address",
+		Aliases: []string{"a"},
 		Usage:   "domain:port separated by commas",
 	}
 
 	file := &cli.StringFlag{
 		Name:    "file",
 		Aliases: []string{"f"},
-		Usage:   "path to newline-delimited list of domains",
+		Usage:   "path to newline-delimited list of addresses",
 	}
 
 	output := &cli.StringFlag{
@@ -73,9 +73,9 @@ func newCmd(w, ew io.Writer) *cli.Command {
 		Value:   false,
 	}
 
-	noTimeInfo := &cli.BoolFlag{
-		Name:    "no-timeinfo",
-		Aliases: []string{"n"},
+	static := &cli.BoolFlag{
+		Name:    "static",
+		Aliases: []string{"s"},
 		Usage:   "hide fields related to the current time in table output",
 		Value:   false,
 	}
@@ -111,12 +111,12 @@ func newCmd(w, ew io.Writer) *cli.Command {
 			withStyle,
 		))
 
-		if err := checkValidPair(cmd, domain.Name, file.Name); err != nil {
-			return nil, err
+		if cmd.IsSet(addr.Name) && cmd.IsSet(file.Name) {
+			return nil, fmt.Errorf("cannot be used together %s and %s", addr.Name, file.Name)
 		}
 
 		if cmd.Bool(insecure.Name) {
-			if err := insecureConfirm(); err != nil {
+			if err := confirmInsecure(); err != nil {
 				return nil, err
 			}
 		}
@@ -125,27 +125,32 @@ func newCmd(w, ew io.Writer) *cli.Command {
 	}
 
 	action := func(ctx context.Context, cmd *cli.Command) error {
-		var domains []string
+		// get addresses
+		var addresses []string
 		var err error
-		if cmd.IsSet(domain.Name) {
-			domains = cmd.StringSlice(domain.Name)
+		if cmd.IsSet(addr.Name) {
+			addresses = cmd.StringSlice(addr.Name)
 		}
 		if cmd.IsSet(file.Name) {
-			domains, err = tlc3.GetDomainsFromFile(cmd.String(file.Name))
+			addresses, err = tlc3.GetAddressesFromFile(cmd.String(file.Name))
 			if err != nil {
 				return err
 			}
 		}
-		if len(domains) == 0 {
-			return errors.New("cannot receive domain names")
+		if len(addresses) == 0 {
+			return errors.New("cannot receive addresses")
 		}
+
+		// load location
 		tz := cmd.String(timeZone.Name)
 		loc, err := time.LoadLocation(tz)
 		if err != nil {
 			return fmt.Errorf("cannot load timezone %q", tz)
 		}
-		logger.Info("getting certificate information...")
-		infos, err := tlc3.GetCerts(ctx, domains, cmd.Duration(timeout.Name), cmd.Bool(insecure.Name), loc)
+
+		// get certificate informations
+		logger.Info("getting certificate informations...")
+		infos, err := tlc3.GetCerts(ctx, addresses, cmd.Duration(timeout.Name), cmd.Bool(insecure.Name), loc)
 		if err != nil {
 			return err
 		}
@@ -160,11 +165,12 @@ func newCmd(w, ew io.Writer) *cli.Command {
 		}
 
 		// create renderer and render output
-		ren := tlc3.NewRenderer(w, infos, outputType, cmd.Bool(noTimeInfo.Name))
+		ren := tlc3.NewRenderer(w, infos, outputType, cmd.Bool(static.Name))
 		if err := ren.Render(); err != nil {
 			return err
 		}
 
+		// done message
 		logger.Info("completed")
 		return nil
 	}
@@ -180,20 +186,14 @@ func newCmd(w, ew io.Writer) *cli.Command {
 		ErrWriter:             ew,
 		Before:                before,
 		Action:                action,
-		Flags:                 []cli.Flag{loglevel, domain, file, output, timeout, insecure, noTimeInfo, timeZone},
+		Flags:                 []cli.Flag{loglevel, addr, file, output, timeout, insecure, static, timeZone},
 	}
 }
 
-func checkValidPair(cmd *cli.Command, a string, b string) error {
-	if cmd.IsSet(a) && cmd.IsSet(b) {
-		return fmt.Errorf("cannot be used together %s and %s", a, b)
-	}
-	return nil
-}
-
-func insecureConfirm() error {
-	ni, _ := strconv.ParseBool(os.Getenv(label + "_NON_INTERACTIVE"))
-	if ni {
+// confirmInsecure prompts the user to confirm the use of the insecure flag.
+func confirmInsecure() error {
+	ci, _ := strconv.ParseBool(os.Getenv(label + "_NON_INTERACTIVE"))
+	if ci {
 		return nil
 	}
 	prompt := promptui.Prompt{

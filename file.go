@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func GetDomainsFromFile(fp string) ([]string, error) {
+func GetAddressesFromFile(fp string) ([]string, error) {
 	if fp == "" {
 		return nil, errors.New("no file provided")
 	}
