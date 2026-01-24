@@ -1,12 +1,12 @@
 package tlc3
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
 	"net"
+	"net/netip"
 	"runtime"
 	"slices"
 	"strings"
@@ -18,14 +18,16 @@ import (
 )
 
 var (
+	nowFunc = time.Now
 	ipMap   sync.Map
 	connMap sync.Map
 )
 
+// CertInfo represents certificate information.
 type CertInfo struct {
 	DomainName  string
 	AccessPort  string
-	IPAddresses []net.IP
+	IPAddresses []netip.Addr
 	Issuer      string
 	CommonName  string
 	SANs        []string
@@ -35,7 +37,8 @@ type CertInfo struct {
 	DaysLeft    int
 }
 
-func GetCertList(ctx context.Context, addrs []string, timeout time.Duration, insecure bool, location *time.Location) ([]*CertInfo, error) {
+// GetCerts retrieves certificate information for the given addresses.
+func GetCerts(ctx context.Context, addrs []string, timeout time.Duration, insecure bool, location *time.Location) ([]*CertInfo, error) {
 	res := make([]*CertInfo, len(addrs))
 	sem := semaphore.NewWeighted(int64(runtime.NumCPU()))
 	eg, ctx := errgroup.WithContext(ctx)
@@ -49,12 +52,12 @@ func GetCertList(ctx context.Context, addrs []string, timeout time.Duration, ins
 			if err != nil {
 				return err
 			}
-			if err := conn.getTLSConn(ctx); err != nil {
+			if err := conn.connect(ctx); err != nil {
 				return err
 			}
-			defer conn.releaseTLSConn()
+			defer conn.release()
 			conn.lookupIP(ctx)
-			info, err := conn.getServerCert()
+			info, err := conn.getCert()
 			if err != nil {
 				return err
 			}
@@ -68,100 +71,89 @@ func GetCertList(ctx context.Context, addrs []string, timeout time.Duration, ins
 	return res, nil
 }
 
+// connector handles TLS connection and certificate retrieval.
 type connector struct {
-	addr      string
-	host      string
-	port      string
-	ips       []net.IP
-	timeout   time.Duration
-	location  *time.Location
-	tlsConfig *tls.Config
-	tlsConn   *tls.Conn
-	mu        sync.Mutex
+	addr     string
+	host     string
+	port     string
+	ips      []netip.Addr
+	timeout  time.Duration
+	location *time.Location
+	config   *tls.Config
+	conn     *tls.Conn
+	mu       sync.Mutex
 }
 
+// newConnector creates a new connector for the given address.
 func newConnector(addr string, timeout time.Duration, insecure bool, location *time.Location) (*connector, error) {
-	addr = ensureDefaultPort(addr)
-	host, port, err := ensureHostPort(addr)
+	if !strings.Contains(addr, ":") {
+		addr += ":443"
+	}
+	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, err
 	}
 	conn := &connector{
-		tlsConfig: &tls.Config{
-			ServerName:         host,
-			MinVersion:         tls.VersionTLS12,
-			InsecureSkipVerify: insecure, // #nosec G402
-		},
 		addr:     addr,
 		host:     host,
 		port:     port,
 		timeout:  timeout,
 		location: location,
+		config: &tls.Config{
+			ServerName:         host,
+			MinVersion:         tls.VersionTLS12,
+			InsecureSkipVerify: insecure, // #nosec G402
+		},
 	}
 	return conn, nil
 }
 
-// Since IP address lookup is not the primary responsibility of this application,
-// it does not return an error but only a zero value in case of failure.
-func (c *connector) lookupIP(ctx context.Context) {
-	if caches, ok := ipMap.Load(c.host); ok {
-		c.ips = caches.([]net.IP)
-		return
-	}
-	ctx, cancel := context.WithTimeout(ctx, c.timeout)
-	defer cancel()
-	var resolver net.Resolver
-	var err error
-	c.ips, err = resolver.LookupIP(ctx, "ip", c.host)
-	if err != nil {
-		c.ips = []net.IP{}
-	}
-	slices.SortFunc(c.ips, func(a, b net.IP) int {
-		return bytes.Compare(a, b)
-	})
-	ipMap.Store(c.host, c.ips)
-}
-
-func (c *connector) getTLSConn(ctx context.Context) error {
+// connect establishes a TLS connection to the server.
+func (c *connector) connect(ctx context.Context) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if conn, ok := connMap.Load(c.host); ok {
-		c.tlsConn = conn.(*tls.Conn)
+		c.conn = conn.(*tls.Conn)
 		return nil
 	}
 	ctx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
-	dialer := tls.Dialer{Config: c.tlsConfig}
+	dialer := tls.Dialer{Config: c.config}
 	conn, err := dialer.DialContext(ctx, "tcp", c.addr)
 	if err != nil {
 		return fmt.Errorf("cannot connect to %q: %w", c.addr, err)
 	}
 	var ok bool
-	c.tlsConn, ok = conn.(*tls.Conn)
+	c.conn, ok = conn.(*tls.Conn)
 	if !ok {
 		conn.Close()
 		return fmt.Errorf("connection is not TLS")
 	}
-	connMap.Store(c.host, c.tlsConn)
+	connMap.Store(c.host, c.conn)
 	return nil
 }
 
-func (c *connector) releaseTLSConn() {
+// release releases the TLS connection back to the connection pool.
+func (c *connector) release() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if c.tlsConn != nil {
-		connMap.Store(c.host, c.tlsConn)
-		c.tlsConn = nil
+	if c.conn != nil {
+		connMap.Store(c.host, c.conn)
+		c.conn = nil
 	}
 }
 
-func (c *connector) getServerCert() (*CertInfo, error) {
-	certs := c.tlsConn.ConnectionState().PeerCertificates
+// getCert retrieves the certificate information from the TLS connection.
+func (c *connector) getCert() (*CertInfo, error) {
+	if c == nil || c.conn == nil {
+		return nil, fmt.Errorf("cannot find connection for %q", c.host)
+	}
+	certs := c.conn.ConnectionState().PeerCertificates
 	if len(certs) == 0 {
 		return nil, fmt.Errorf("cannot find cert for %q", c.host)
 	}
 	cert := certs[0]
-	now := time.Now()
+	now := nowFunc()
 	info := &CertInfo{
 		DomainName:  c.host,
 		AccessPort:  c.port,
@@ -172,33 +164,34 @@ func (c *connector) getServerCert() (*CertInfo, error) {
 		NotBefore:   cert.NotBefore.In(c.location),
 		NotAfter:    cert.NotAfter.In(c.location),
 		CurrentTime: now.In(c.location).Truncate(time.Second),
-		DaysLeft:    daysLeft(cert.NotAfter, now),
+		DaysLeft:    getDaysLeft(cert.NotAfter, now),
 	}
 	return info, nil
 }
 
-func daysLeft(t time.Time, u time.Time) int {
-	return int(t.Sub(u).Hours() / 24)
-}
-
-func ensureDefaultPort(addr string) string {
-	if !strings.Contains(addr, ":") {
-		addr += ":443"
+// lookupIP looks up IP addresses for the host.
+// Since IP address lookup is not the primary responsibility of this application,
+// it does not return an error but only a zero value in case of failure.
+func (c *connector) lookupIP(ctx context.Context) {
+	if caches, ok := ipMap.Load(c.host); ok {
+		c.ips = caches.([]netip.Addr)
+		return
 	}
-	return addr
-}
-
-func ensureHostPort(addr string) (host, port string, err error) {
-	host, port, err = net.SplitHostPort(addr)
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+	var resolver net.Resolver
+	var err error
+	c.ips, err = resolver.LookupNetIP(ctx, "ip", c.host)
 	if err != nil {
-		return "", "", err
+		c.ips = nil
 	}
-	if _, err := net.LookupPort("tcp", port); err != nil {
-		return "", "", err
-	}
-	return host, port, nil
+	slices.SortFunc(c.ips, func(a, b netip.Addr) int {
+		return a.Compare(b)
+	})
+	ipMap.Store(c.host, c.ips)
 }
 
+// getSANs extracts Subject Alternative Names from the certificate.
 func getSANs(cert *x509.Certificate) []string {
 	sans := make([]string, 0, len(cert.DNSNames)+len(cert.EmailAddresses)+len(cert.IPAddresses)+len(cert.URIs))
 	sans = append(sans, cert.DNSNames...)
@@ -210,4 +203,9 @@ func getSANs(cert *x509.Certificate) []string {
 		sans = append(sans, uri.String())
 	}
 	return sans
+}
+
+// getDaysLeft calculates the number of days left until the given time.
+func getDaysLeft(t time.Time, u time.Time) int {
+	return int(t.Sub(u).Hours() / 24)
 }

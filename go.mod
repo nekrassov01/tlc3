@@ -3,7 +3,6 @@ module github.com/nekrassov01/tlc3
 go 1.25.5
 
 require (
-	github.com/google/go-cmp v0.6.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/nekrassov01/logger v0.0.6
 	github.com/nekrassov01/mintab v0.0.57

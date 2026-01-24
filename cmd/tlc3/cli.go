@@ -54,9 +54,8 @@ func newCmd(w, ew io.Writer) *cli.Command {
 		Name:    "output",
 		Aliases: []string{"o"},
 		Usage:   "set output type",
-		Value:   "json",
 		Sources: cli.EnvVars(label + "_OUTPUT_TYPE"),
-		//	Value:   tlc3.OutputTypeCompressedText.String(),
+		Value:   tlc3.OutputTypeCompressedText.String(),
 	}
 
 	timeout := &cli.DurationFlag{
@@ -132,7 +131,7 @@ func newCmd(w, ew io.Writer) *cli.Command {
 			domains = cmd.StringSlice(domain.Name)
 		}
 		if cmd.IsSet(file.Name) {
-			domains, err = tlc3.FromList(cmd.String(file.Name))
+			domains, err = tlc3.GetDomainsFromFile(cmd.String(file.Name))
 			if err != nil {
 				return err
 			}
@@ -146,16 +145,26 @@ func newCmd(w, ew io.Writer) *cli.Command {
 			return fmt.Errorf("cannot load timezone %q", tz)
 		}
 		logger.Info("getting certificate information...")
-		infos, err := tlc3.GetCertList(ctx, domains, cmd.Duration(timeout.Name), cmd.Bool(insecure.Name), loc)
+		infos, err := tlc3.GetCerts(ctx, domains, cmd.Duration(timeout.Name), cmd.Bool(insecure.Name), loc)
 		if err != nil {
 			return err
 		}
 		slices.SortFunc(infos, func(a, b *tlc3.CertInfo) int {
 			return cmp.Compare(a.DomainName, b.DomainName)
 		})
-		if err := tlc3.Out(infos, w, cmd.String(output.Name), cmd.Bool(noTimeInfo.Name)); err != nil {
+
+		// parse output type passed as string
+		outputType, err := tlc3.ParseOutputType(cmd.String(output.Name))
+		if err != nil {
 			return err
 		}
+
+		// create renderer and render output
+		ren := tlc3.NewRenderer(w, infos, outputType, cmd.Bool(noTimeInfo.Name))
+		if err := ren.Render(); err != nil {
+			return err
+		}
+
 		logger.Info("completed")
 		return nil
 	}
@@ -193,7 +202,7 @@ func insecureConfirm() error {
 	}
 	_, err := prompt.Run()
 	if err != nil {
-		return err
+		return fmt.Errorf("canceled")
 	}
 	return nil
 }

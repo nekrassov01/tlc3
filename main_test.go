@@ -1,0 +1,186 @@
+package tlc3
+
+import (
+	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"fmt"
+	"math/big"
+	"net/http"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+)
+
+var (
+	host       = "localhost"
+	port       = "8443"
+	addr       = host + ":" + port
+	issuer     = "CN=local test CA"
+	commonName = "local test CA"
+)
+
+func TestMain(m *testing.M) {
+	nowFunc = func() time.Time {
+		return mustTime("2025-01-01T09:00:00+09:00")
+	}
+	server, tempDir, err := setup(addr)
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		nowFunc = time.Now
+		if err := teardown(server, tempDir); err != nil {
+			panic(err)
+		}
+	}()
+	m.Run()
+}
+
+func mustTime(s string) time.Time {
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
+func setup(addr string) (*http.Server, string, error) {
+	tempDir, certFile, keyFile, err := setupPath()
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create temp dir: %w", err)
+	}
+	if err := setupCert(certFile, keyFile); err != nil {
+		return nil, "", fmt.Errorf("failed to create certificate: %w", err)
+	}
+	server := setupServer(addr)
+	ch := make(chan error, 1)
+	go func() {
+		if err := server.ListenAndServeTLS(certFile, keyFile); err != http.ErrServerClosed {
+			ch <- err
+		}
+		close(ch)
+	}()
+	if err := waitServer(addr, 5*time.Second); err != nil {
+		return nil, "", fmt.Errorf("failed to start server: %w", err)
+	}
+	select {
+	case err := <-ch:
+		if err != nil {
+			return nil, "", fmt.Errorf("failed to run server: %w", err)
+		}
+	default:
+	}
+	return server, tempDir, nil
+}
+
+func setupPath() (tempDir, certFile, keyFile string, err error) {
+	tempDir, err = os.MkdirTemp("", "test")
+	if err != nil {
+		return "", "", "", err
+	}
+	return tempDir, filepath.Join(tempDir, "cert.pem"), filepath.Join(tempDir, "key.pem"), nil
+}
+
+func setupCert(certFile, keyFile string) error {
+	// create private key
+	privKey, err := rsa.GenerateKey(rand.Reader, 4096)
+	if err != nil {
+		return err
+	}
+
+	// configure certificate
+	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+	if err != nil {
+		return err
+	}
+	tmpl := x509.Certificate{
+		SerialNumber:          serialNumber,
+		Subject:               pkix.Name{CommonName: commonName},
+		NotBefore:             mustTime("2024-01-01T09:00:00+09:00"),
+		NotAfter:              mustTime("2025-01-02T09:00:00+09:00"),
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+	}
+
+	// create certificate
+	derBytes, err := x509.CreateCertificate(rand.Reader, &tmpl, &tmpl, &privKey.PublicKey, privKey)
+	if err != nil {
+		return err
+	}
+
+	// save certificate in pem
+	certOut, err := os.Create(filepath.Clean(certFile))
+	if err != nil {
+		return err
+	}
+	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
+		return err
+	}
+	certOut.Close()
+
+	// convert private key
+	privBytes, err := x509.MarshalPKCS8PrivateKey(privKey)
+	if err != nil {
+		return err
+	}
+
+	// save private key in pem
+	keyOut, err := os.Create(filepath.Clean(keyFile))
+	if err != nil {
+		return err
+	}
+	if err := pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privBytes}); err != nil {
+		return err
+	}
+	keyOut.Close()
+
+	return nil
+}
+
+func setupServer(addr string) *http.Server {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "test server")
+	})
+	tlsConfig := &tls.Config{
+		MinVersion:         tls.VersionTLS12,
+		InsecureSkipVerify: true, // #nosec G402
+	}
+	server := &http.Server{
+		Addr:              addr,
+		Handler:           handler,
+		TLSConfig:         tlsConfig,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+	return server
+}
+
+func waitServer(addr string, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		conn, err := tls.Dial("tcp", addr, &tls.Config{
+			InsecureSkipVerify: true, // #nosec G402
+		})
+		if err == nil {
+			conn.Close()
+			return nil
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return fmt.Errorf("cannot start server in %v", timeout)
+}
+
+func teardown(server *http.Server, tempDir string) error {
+	defer os.RemoveAll(tempDir)
+	if err := server.Shutdown(context.Background()); err != nil {
+		return fmt.Errorf("cannot shutdown server: %w", err)
+	}
+	return nil
+}
