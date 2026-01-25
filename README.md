@@ -19,7 +19,7 @@ USAGE:
    tlc3 [global options]
 
 VERSION:
-   0.0.0 (revision: XXXXXXX)
+   0.0.0 (revision: xxxxxxx)
 
 DESCRIPTION:
    CLI application for checking TLS certificate informations
@@ -33,6 +33,7 @@ GLOBAL OPTIONS:
    --insecure, -i                                               skip verification of the cert chain and host name
    --static, -s                                                 hide fields related to the current time in table output
    --timezone string, -z string                                 time zone for datetime fields (default: "Local") [$TLC3_TIMEZONE]
+   --tls-version string, -m string                              tls minimum version to use (default: "1.2") [$TLC3_TLS_VERSION]
    --help, -h                                                   show help
    --version, -v                                                print the version
 ```
@@ -64,6 +65,9 @@ tlc3 -a example.com,www.example.com -t 10s
 
 # Change timezone from local to specified location
 tlc3 -a example.com,www.example.com -z "Asia/Tokyo"
+
+# Change TLS minimum version
+tlc3 -a example.com,www.example.com -m "1.3"
 ```
 
 Benchmark
@@ -108,6 +112,13 @@ If automation is required, this restriction can be removed by setting the enviro
 
 ```bash
 export TLC3_NON_INTERACTIVE=true
+```
+
+The same applies when the minimum TLS version is set to 1.1 or lower using the `--tls-version` `-m` flag.
+
+```bash
+$ tlc3 -a example.com,www.example.com -m 1.1
+? [WARNING] We recommend using TLS version 1.2 or higher. Do you wish to proceed despite the risk? [y/N]
 ```
 
 Installation
