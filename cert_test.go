@@ -35,20 +35,7 @@ func Test_GetCerts(t *testing.T) {
 				location: time.Local,
 				insecure: true,
 			},
-			want: []*CertInfo{
-				{
-					DomainName:  host,
-					AccessPort:  port,
-					IPAddresses: []netip.Addr{netip.MustParseAddr("127.0.0.1"), netip.MustParseAddr("::1")},
-					Issuer:      issuer,
-					CommonName:  commonName,
-					SANs:        []string{},
-					NotBefore:   mustTime("2024-01-01T09:00:00+09:00"),
-					NotAfter:    mustTime("2025-01-02T09:00:00+09:00"),
-					CurrentTime: mustTime("2025-01-01T09:00:00+09:00"),
-					DaysLeft:    1,
-				},
-			},
+			want:    basicExpects,
 			wantErr: false,
 		},
 		{
@@ -60,20 +47,7 @@ func Test_GetCerts(t *testing.T) {
 				location: time.UTC,
 				insecure: true,
 			},
-			want: []*CertInfo{
-				{
-					DomainName:  host,
-					AccessPort:  port,
-					IPAddresses: []netip.Addr{netip.MustParseAddr("127.0.0.1"), netip.MustParseAddr("::1")},
-					Issuer:      issuer,
-					CommonName:  commonName,
-					SANs:        []string{},
-					NotBefore:   mustTime("2024-01-01T00:00:00Z"),
-					NotAfter:    mustTime("2025-01-02T00:00:00Z"),
-					CurrentTime: mustTime("2025-01-01T00:00:00Z"),
-					DaysLeft:    1,
-				},
-			},
+			want:    utcExpects,
 			wantErr: false,
 		},
 	}
@@ -370,7 +344,7 @@ func Test_connector_getCert(t *testing.T) {
 				addr:     addr,
 				host:     host,
 				port:     port,
-				ips:      []netip.Addr{},
+				ips:      []netip.Addr{netip.MustParseAddr("127.0.0.1"), netip.MustParseAddr("::1")},
 				timeout:  5 * time.Second,
 				location: time.Local,
 				config: &tls.Config{
@@ -379,18 +353,7 @@ func Test_connector_getCert(t *testing.T) {
 					InsecureSkipVerify: true, // #nosec G402
 				},
 			},
-			want: &CertInfo{
-				DomainName:  host,
-				AccessPort:  port,
-				IPAddresses: []netip.Addr{},
-				Issuer:      "CN=local test CA",
-				CommonName:  "local test CA",
-				SANs:        []string{},
-				NotBefore:   mustTime("2024-01-01T09:00:00+09:00"),
-				NotAfter:    mustTime("2025-01-02T09:00:00+09:00"),
-				CurrentTime: mustTime("2025-01-01T09:00:00+09:00"),
-				DaysLeft:    1,
-			},
+			want:    basicExpects[0],
 			wantErr: false,
 		},
 		{
@@ -399,7 +362,7 @@ func Test_connector_getCert(t *testing.T) {
 				addr:     addr,
 				host:     host,
 				port:     port,
-				ips:      []netip.Addr{},
+				ips:      []netip.Addr{netip.MustParseAddr("127.0.0.1"), netip.MustParseAddr("::1")},
 				timeout:  5 * time.Second,
 				location: time.UTC,
 				config: &tls.Config{
@@ -408,18 +371,7 @@ func Test_connector_getCert(t *testing.T) {
 					InsecureSkipVerify: true, // #nosec G402
 				},
 			},
-			want: &CertInfo{
-				DomainName:  host,
-				AccessPort:  port,
-				IPAddresses: []netip.Addr{},
-				Issuer:      "CN=local test CA",
-				CommonName:  "local test CA",
-				SANs:        []string{},
-				NotBefore:   mustTime("2024-01-01T00:00:00Z"),
-				NotAfter:    mustTime("2025-01-02T00:00:00Z"),
-				CurrentTime: mustTime("2025-01-01T00:00:00Z"),
-				DaysLeft:    1,
-			},
+			want:    utcExpects[0],
 			wantErr: false,
 		},
 		{
@@ -428,7 +380,7 @@ func Test_connector_getCert(t *testing.T) {
 				addr:     addr,
 				host:     host,
 				port:     port,
-				ips:      []netip.Addr{},
+				ips:      []netip.Addr{netip.MustParseAddr("127.0.0.1"), netip.MustParseAddr("::1")},
 				timeout:  5 * time.Second,
 				location: time.UTC,
 				config: &tls.Config{

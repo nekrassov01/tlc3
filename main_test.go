@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"testing"
@@ -19,22 +20,80 @@ import (
 )
 
 var (
-	host       = "localhost"
-	port       = "8443"
-	addr       = host + ":" + port
-	issuer     = "CN=local test CA"
-	commonName = "local test CA"
+	loc, _         = time.LoadLocation("Asia/Tokyo")
+	host           = "localhost"
+	port           = "8443"
+	addr           = host + ":" + port
+	ipAddresses    = []netip.Addr{netip.MustParseAddr("127.0.0.1"), netip.MustParseAddr("::1")}
+	issuer         = "CN=local test CA"
+	commonName     = "local test CA"
+	sans           = []string{"localhost", "127.0.0.1"}
+	notBefore      = mustTime("2024-01-01T09:00:00+09:00", loc)
+	notAfter       = mustTime("2025-01-02T09:00:00+09:00", loc)
+	currentTime    = mustTime("2025-01-01T09:00:00+09:00", loc)
+	notBeforeUTC   = mustTime("2024-01-01T00:00:00Z", time.UTC)
+	notAfterUTC    = mustTime("2025-01-02T00:00:00Z", time.UTC)
+	currentTimeUTC = mustTime("2025-01-01T00:00:00Z", time.UTC)
+	daysLeft       = 1
+)
+
+var (
+	basicExpects = []*CertInfo{
+		{
+			DomainName:  host,
+			AccessPort:  port,
+			IPAddresses: ipAddresses,
+			Issuer:      issuer,
+			CommonName:  commonName,
+			SANs:        []string{},
+			NotBefore:   notBefore,
+			NotAfter:    notAfter,
+			CurrentTime: currentTime,
+			DaysLeft:    daysLeft,
+		},
+	}
+	utcExpects = []*CertInfo{
+		{
+			DomainName:  host,
+			AccessPort:  port,
+			IPAddresses: ipAddresses,
+			Issuer:      issuer,
+			CommonName:  commonName,
+			SANs:        []string{},
+			NotBefore:   notBeforeUTC,
+			NotAfter:    notAfterUTC,
+			CurrentTime: currentTimeUTC,
+			DaysLeft:    1,
+		},
+	}
+	renderInput = []*CertInfo{
+		{
+			DomainName:  host,
+			AccessPort:  port,
+			IPAddresses: ipAddresses,
+			Issuer:      issuer,
+			CommonName:  commonName,
+			SANs:        sans,
+			NotBefore:   notBefore,
+			NotAfter:    notAfter,
+			CurrentTime: currentTime,
+			DaysLeft:    daysLeft,
+		},
+	}
 )
 
 func TestMain(m *testing.M) {
+	bk := time.Local
+	time.Local = loc
 	nowFunc = func() time.Time {
-		return mustTime("2025-01-01T09:00:00+09:00")
+		return currentTime
 	}
 	server, tempDir, err := setup(addr)
 	if err != nil {
 		panic(err)
 	}
 	defer func() {
+		time.Local = bk
 		nowFunc = time.Now
 		if err := teardown(server, tempDir); err != nil {
 			panic(err)
@@ -43,8 +102,8 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func mustTime(s string) time.Time {
-	t, err := time.Parse(time.RFC3339, s)
+func mustTime(s string, loc *time.Location) time.Time {
+	t, err := time.ParseInLocation(time.RFC3339, s, loc)
 	if err != nil {
 		panic(err)
 	}
@@ -103,8 +162,8 @@ func setupCert(certFile, keyFile string) error {
 	tmpl := x509.Certificate{
 		SerialNumber:          serialNumber,
 		Subject:               pkix.Name{CommonName: commonName},
-		NotBefore:             mustTime("2024-01-01T09:00:00+09:00"),
-		NotAfter:              mustTime("2025-01-02T09:00:00+09:00"),
+		NotBefore:             notBeforeUTC,
+		NotAfter:              notAfterUTC,
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,

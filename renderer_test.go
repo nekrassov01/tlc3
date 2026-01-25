@@ -3,25 +3,9 @@ package tlc3
 import (
 	"bytes"
 	"io"
-	"net/netip"
 	"reflect"
 	"testing"
 )
-
-var input = []*CertInfo{
-	{
-		DomainName:  host,
-		AccessPort:  port,
-		IPAddresses: []netip.Addr{netip.MustParseAddr("127.0.0.1"), netip.MustParseAddr("::1")},
-		Issuer:      "CN=local test CA",
-		CommonName:  "local test CA",
-		SANs:        []string{"localhost", "127.0.0.1"},
-		NotBefore:   mustTime("2023-01-01T09:00:00+09:00"),
-		NotAfter:    mustTime("2025-01-01T09:00:00+09:00"),
-		CurrentTime: mustTime("2024-01-01T09:00:00+09:00"),
-		DaysLeft:    1,
-	},
-}
 
 func TestNewRenderer(t *testing.T) {
 	type args struct {
@@ -40,13 +24,13 @@ func TestNewRenderer(t *testing.T) {
 			name: "basic",
 			args: args{
 				w:          &bytes.Buffer{},
-				data:       input,
+				data:       renderInput,
 				outputType: OutputTypeJSON,
 				static:     false,
 			},
 			want: &Renderer{
 				Header:     header,
-				Data:       input,
+				Data:       renderInput,
 				OutputType: OutputTypeJSON,
 				static:     false,
 				w:          &bytes.Buffer{},
@@ -96,7 +80,7 @@ func TestRenderer_String(t *testing.T) {
 		{
 			name: "basic",
 			fields: fields{
-				Data:       input,
+				Data:       renderInput,
 				OutputType: OutputTypeJSON,
 				w:          &bytes.Buffer{},
 			},
@@ -127,9 +111,9 @@ func TestRenderer_String(t *testing.T) {
         "localhost",
         "127.0.0.1"
       ],
-      "NotBefore": "2023-01-01T09:00:00+09:00",
-      "NotAfter": "2025-01-01T09:00:00+09:00",
-      "CurrentTime": "2024-01-01T09:00:00+09:00",
+      "NotBefore": "2024-01-01T09:00:00+09:00",
+      "NotAfter": "2025-01-02T09:00:00+09:00",
+      "CurrentTime": "2025-01-01T09:00:00+09:00",
       "DaysLeft": 1
     }
   ],
@@ -194,19 +178,19 @@ func Test_Render(t *testing.T) {
 			name: "json",
 			fields: fields{
 				Header:     header,
-				Data:       input,
+				Data:       renderInput,
 				OutputType: OutputTypeJSON,
 				static:     false,
 				w:          &bytes.Buffer{},
 			},
-			want:    `[{"DomainName":"localhost","AccessPort":"8443","IPAddresses":["127.0.0.1","::1"],"Issuer":"CN=local test CA","CommonName":"local test CA","SANs":["localhost","127.0.0.1"],"NotBefore":"2023-01-01T09:00:00+09:00","NotAfter":"2025-01-01T09:00:00+09:00","CurrentTime":"2024-01-01T09:00:00+09:00","DaysLeft":1}]`,
+			want:    `[{"DomainName":"localhost","AccessPort":"8443","IPAddresses":["127.0.0.1","::1"],"Issuer":"CN=local test CA","CommonName":"local test CA","SANs":["localhost","127.0.0.1"],"NotBefore":"2024-01-01T09:00:00+09:00","NotAfter":"2025-01-02T09:00:00+09:00","CurrentTime":"2025-01-01T09:00:00+09:00","DaysLeft":1}]`,
 			wantErr: false,
 		},
 		{
 			name: "prettyjson",
 			fields: fields{
 				Header:     header,
-				Data:       input,
+				Data:       renderInput,
 				OutputType: OutputTypePrettyJSON,
 				static:     false,
 				w:          &bytes.Buffer{},
@@ -225,9 +209,9 @@ func Test_Render(t *testing.T) {
       "localhost",
       "127.0.0.1"
     ],
-    "NotBefore": "2023-01-01T09:00:00+09:00",
-    "NotAfter": "2025-01-01T09:00:00+09:00",
-    "CurrentTime": "2024-01-01T09:00:00+09:00",
+    "NotBefore": "2024-01-01T09:00:00+09:00",
+    "NotAfter": "2025-01-02T09:00:00+09:00",
+    "CurrentTime": "2025-01-01T09:00:00+09:00",
     "DaysLeft": 1
   }
 ]`,
@@ -237,7 +221,7 @@ func Test_Render(t *testing.T) {
 			name: "text",
 			fields: fields{
 				Header:     header,
-				Data:       input,
+				Data:       renderInput,
 				OutputType: OutputTypeText,
 				static:     false,
 				w:          &bytes.Buffer{},
@@ -245,7 +229,7 @@ func Test_Render(t *testing.T) {
 			want: `+------------+------------+-------------+------------------+---------------+-----------+-------------------------------+-------------------------------+-------------------------------+----------+
 | DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs      | NotBefore                     | NotAfter                      | CurrentTime                   | DaysLeft |
 +------------+------------+-------------+------------------+---------------+-----------+-------------------------------+-------------------------------+-------------------------------+----------+
-| localhost  |       8443 | 127.0.0.1   | CN=local test CA | local test CA | localhost | 2023-01-01 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST | 2024-01-01 09:00:00 +0900 JST |        1 |
+| localhost  |       8443 | 127.0.0.1   | CN=local test CA | local test CA | localhost | 2024-01-01 09:00:00 +0900 JST | 2025-01-02 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST |        1 |
 |            |            | ::1         |                  |               | 127.0.0.1 |                               |                               |                               |          |
 +------------+------------+-------------+------------------+---------------+-----------+-------------------------------+-------------------------------+-------------------------------+----------+
 `,
@@ -255,7 +239,7 @@ func Test_Render(t *testing.T) {
 			name: "compressedtext",
 			fields: fields{
 				Header:     header,
-				Data:       input,
+				Data:       renderInput,
 				OutputType: OutputTypeCompressedText,
 				static:     false,
 				w:          &bytes.Buffer{},
@@ -263,7 +247,7 @@ func Test_Render(t *testing.T) {
 			want: `+------------+------------+-------------+------------------+---------------+-----------+-------------------------------+-------------------------------+-------------------------------+----------+
 | DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs      | NotBefore                     | NotAfter                      | CurrentTime                   | DaysLeft |
 +------------+------------+-------------+------------------+---------------+-----------+-------------------------------+-------------------------------+-------------------------------+----------+
-| localhost  |       8443 | 127.0.0.1   | CN=local test CA | local test CA | localhost | 2023-01-01 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST | 2024-01-01 09:00:00 +0900 JST |        1 |
+| localhost  |       8443 | 127.0.0.1   | CN=local test CA | local test CA | localhost | 2024-01-01 09:00:00 +0900 JST | 2025-01-02 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST |        1 |
 |            |            | ::1         |                  |               | 127.0.0.1 |                               |                               |                               |          |
 +------------+------------+-------------+------------------+---------------+-----------+-------------------------------+-------------------------------+-------------------------------+----------+
 `,
@@ -273,14 +257,14 @@ func Test_Render(t *testing.T) {
 			name: "markdown",
 			fields: fields{
 				Header:     header,
-				Data:       input,
+				Data:       renderInput,
 				OutputType: OutputTypeMarkdown,
 				static:     false,
 				w:          &bytes.Buffer{},
 			},
 			want: `| DomainName | AccessPort | IPAddresses      | Issuer           | CommonName    | SANs                   | NotBefore                     | NotAfter                      | CurrentTime                   | DaysLeft |
 |------------|------------|------------------|------------------|---------------|------------------------|-------------------------------|-------------------------------|-------------------------------|----------|
-| localhost  |       8443 | 127.0.0.1<br>::1 | CN=local test CA | local test CA | localhost<br>127.0.0.1 | 2023-01-01 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST | 2024-01-01 09:00:00 +0900 JST |        1 |
+| localhost  |       8443 | 127.0.0.1<br>::1 | CN=local test CA | local test CA | localhost<br>127.0.0.1 | 2024-01-01 09:00:00 +0900 JST | 2025-01-02 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST |        1 |
 `,
 			wantErr: false,
 		},
@@ -288,13 +272,13 @@ func Test_Render(t *testing.T) {
 			name: "backlog",
 			fields: fields{
 				Header:     header,
-				Data:       input,
+				Data:       renderInput,
 				OutputType: OutputTypeBacklog,
 				static:     false,
 				w:          &bytes.Buffer{},
 			},
 			want: `| DomainName | AccessPort | IPAddresses      | Issuer           | CommonName    | SANs                   | NotBefore                     | NotAfter                      | CurrentTime                   | DaysLeft |h
-| localhost  |       8443 | 127.0.0.1&br;::1 | CN=local test CA | local test CA | localhost&br;127.0.0.1 | 2023-01-01 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST | 2024-01-01 09:00:00 +0900 JST |        1 |
+| localhost  |       8443 | 127.0.0.1&br;::1 | CN=local test CA | local test CA | localhost&br;127.0.0.1 | 2024-01-01 09:00:00 +0900 JST | 2025-01-02 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST |        1 |
 `,
 			wantErr: false,
 		},
@@ -302,13 +286,13 @@ func Test_Render(t *testing.T) {
 			name: "tsv",
 			fields: fields{
 				Header:     header,
-				Data:       input,
+				Data:       renderInput,
 				OutputType: OutputTypeTSV,
 				static:     false,
 				w:          &bytes.Buffer{},
 			},
 			want: `DomainName	AccessPort	IPAddresses	Issuer	CommonName	SANs	NotBefore	NotAfter	CurrentTime	DaysLeft
-localhost	8443	127.0.0.1,::1	CN=local test CA	local test CA	localhost,127.0.0.1	2023-01-01 09:00:00 +0900 JST	2025-01-01 09:00:00 +0900 JST	2024-01-01 09:00:00 +0900 JST	1
+localhost	8443	127.0.0.1,::1	CN=local test CA	local test CA	localhost,127.0.0.1	2024-01-01 09:00:00 +0900 JST	2025-01-02 09:00:00 +0900 JST	2025-01-01 09:00:00 +0900 JST	1
 `,
 			wantErr: false,
 		},
@@ -316,19 +300,19 @@ localhost	8443	127.0.0.1,::1	CN=local test CA	local test CA	localhost,127.0.0.1	
 			name: "json+static",
 			fields: fields{
 				Header:     header,
-				Data:       input,
+				Data:       renderInput,
 				OutputType: OutputTypeJSON,
 				static:     true,
 				w:          &bytes.Buffer{},
 			},
-			want:    `[{"DomainName":"localhost","AccessPort":"8443","IPAddresses":["127.0.0.1","::1"],"Issuer":"CN=local test CA","CommonName":"local test CA","SANs":["localhost","127.0.0.1"],"NotBefore":"2023-01-01T09:00:00+09:00","NotAfter":"2025-01-01T09:00:00+09:00","CurrentTime":"2024-01-01T09:00:00+09:00","DaysLeft":1}]`,
+			want:    `[{"DomainName":"localhost","AccessPort":"8443","IPAddresses":["127.0.0.1","::1"],"Issuer":"CN=local test CA","CommonName":"local test CA","SANs":["localhost","127.0.0.1"],"NotBefore":"2024-01-01T09:00:00+09:00","NotAfter":"2025-01-02T09:00:00+09:00","CurrentTime":"2025-01-01T09:00:00+09:00","DaysLeft":1}]`,
 			wantErr: false,
 		},
 		{
 			name: "prettyjson+static",
 			fields: fields{
 				Header:     header,
-				Data:       input,
+				Data:       renderInput,
 				OutputType: OutputTypePrettyJSON,
 				static:     true,
 				w:          &bytes.Buffer{},
@@ -347,9 +331,9 @@ localhost	8443	127.0.0.1,::1	CN=local test CA	local test CA	localhost,127.0.0.1	
       "localhost",
       "127.0.0.1"
     ],
-    "NotBefore": "2023-01-01T09:00:00+09:00",
-    "NotAfter": "2025-01-01T09:00:00+09:00",
-    "CurrentTime": "2024-01-01T09:00:00+09:00",
+    "NotBefore": "2024-01-01T09:00:00+09:00",
+    "NotAfter": "2025-01-02T09:00:00+09:00",
+    "CurrentTime": "2025-01-01T09:00:00+09:00",
     "DaysLeft": 1
   }
 ]`,
@@ -359,7 +343,7 @@ localhost	8443	127.0.0.1,::1	CN=local test CA	local test CA	localhost,127.0.0.1	
 			name: "text+static",
 			fields: fields{
 				Header:     header,
-				Data:       input,
+				Data:       renderInput,
 				OutputType: OutputTypeText,
 				static:     true,
 				w:          &bytes.Buffer{},
@@ -367,7 +351,7 @@ localhost	8443	127.0.0.1,::1	CN=local test CA	local test CA	localhost,127.0.0.1	
 			want: `+------------+------------+-------------+------------------+---------------+-----------+-------------------------------+-------------------------------+
 | DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs      | NotBefore                     | NotAfter                      |
 +------------+------------+-------------+------------------+---------------+-----------+-------------------------------+-------------------------------+
-| localhost  |       8443 | 127.0.0.1   | CN=local test CA | local test CA | localhost | 2023-01-01 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST |
+| localhost  |       8443 | 127.0.0.1   | CN=local test CA | local test CA | localhost | 2024-01-01 09:00:00 +0900 JST | 2025-01-02 09:00:00 +0900 JST |
 |            |            | ::1         |                  |               | 127.0.0.1 |                               |                               |
 +------------+------------+-------------+------------------+---------------+-----------+-------------------------------+-------------------------------+
 `,
@@ -377,7 +361,7 @@ localhost	8443	127.0.0.1,::1	CN=local test CA	local test CA	localhost,127.0.0.1	
 			name: "compressedtext+static",
 			fields: fields{
 				Header:     header,
-				Data:       input,
+				Data:       renderInput,
 				OutputType: OutputTypeCompressedText,
 				static:     true,
 				w:          &bytes.Buffer{},
@@ -385,7 +369,7 @@ localhost	8443	127.0.0.1,::1	CN=local test CA	local test CA	localhost,127.0.0.1	
 			want: `+------------+------------+-------------+------------------+---------------+-----------+-------------------------------+-------------------------------+
 | DomainName | AccessPort | IPAddresses | Issuer           | CommonName    | SANs      | NotBefore                     | NotAfter                      |
 +------------+------------+-------------+------------------+---------------+-----------+-------------------------------+-------------------------------+
-| localhost  |       8443 | 127.0.0.1   | CN=local test CA | local test CA | localhost | 2023-01-01 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST |
+| localhost  |       8443 | 127.0.0.1   | CN=local test CA | local test CA | localhost | 2024-01-01 09:00:00 +0900 JST | 2025-01-02 09:00:00 +0900 JST |
 |            |            | ::1         |                  |               | 127.0.0.1 |                               |                               |
 +------------+------------+-------------+------------------+---------------+-----------+-------------------------------+-------------------------------+
 `,
@@ -395,14 +379,14 @@ localhost	8443	127.0.0.1,::1	CN=local test CA	local test CA	localhost,127.0.0.1	
 			name: "markdown+static",
 			fields: fields{
 				Header:     header,
-				Data:       input,
+				Data:       renderInput,
 				OutputType: OutputTypeMarkdown,
 				static:     true,
 				w:          &bytes.Buffer{},
 			},
 			want: `| DomainName | AccessPort | IPAddresses      | Issuer           | CommonName    | SANs                   | NotBefore                     | NotAfter                      |
 |------------|------------|------------------|------------------|---------------|------------------------|-------------------------------|-------------------------------|
-| localhost  |       8443 | 127.0.0.1<br>::1 | CN=local test CA | local test CA | localhost<br>127.0.0.1 | 2023-01-01 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST |
+| localhost  |       8443 | 127.0.0.1<br>::1 | CN=local test CA | local test CA | localhost<br>127.0.0.1 | 2024-01-01 09:00:00 +0900 JST | 2025-01-02 09:00:00 +0900 JST |
 `,
 			wantErr: false,
 		},
@@ -410,13 +394,13 @@ localhost	8443	127.0.0.1,::1	CN=local test CA	local test CA	localhost,127.0.0.1	
 			name: "backlog+static",
 			fields: fields{
 				Header:     header,
-				Data:       input,
+				Data:       renderInput,
 				OutputType: OutputTypeBacklog,
 				static:     true,
 				w:          &bytes.Buffer{},
 			},
 			want: `| DomainName | AccessPort | IPAddresses      | Issuer           | CommonName    | SANs                   | NotBefore                     | NotAfter                      |h
-| localhost  |       8443 | 127.0.0.1&br;::1 | CN=local test CA | local test CA | localhost&br;127.0.0.1 | 2023-01-01 09:00:00 +0900 JST | 2025-01-01 09:00:00 +0900 JST |
+| localhost  |       8443 | 127.0.0.1&br;::1 | CN=local test CA | local test CA | localhost&br;127.0.0.1 | 2024-01-01 09:00:00 +0900 JST | 2025-01-02 09:00:00 +0900 JST |
 `,
 			wantErr: false,
 		},
@@ -424,13 +408,13 @@ localhost	8443	127.0.0.1,::1	CN=local test CA	local test CA	localhost,127.0.0.1	
 			name: "tsv+static",
 			fields: fields{
 				Header:     header,
-				Data:       input,
+				Data:       renderInput,
 				OutputType: OutputTypeTSV,
 				static:     true,
 				w:          &bytes.Buffer{},
 			},
 			want: `DomainName	AccessPort	IPAddresses	Issuer	CommonName	SANs	NotBefore	NotAfter
-localhost	8443	127.0.0.1,::1	CN=local test CA	local test CA	localhost,127.0.0.1	2023-01-01 09:00:00 +0900 JST	2025-01-01 09:00:00 +0900 JST
+localhost	8443	127.0.0.1,::1	CN=local test CA	local test CA	localhost,127.0.0.1	2024-01-01 09:00:00 +0900 JST	2025-01-02 09:00:00 +0900 JST
 `,
 			wantErr: false,
 		},
@@ -438,7 +422,7 @@ localhost	8443	127.0.0.1,::1	CN=local test CA	local test CA	localhost,127.0.0.1	
 			name: "empty",
 			fields: fields{
 				Header:     header,
-				Data:       input,
+				Data:       renderInput,
 				OutputType: 256,
 				static:     false,
 				w:          &bytes.Buffer{},
