@@ -3,6 +3,7 @@ package main
 import (
 	"cmp"
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -88,6 +89,14 @@ func newCmd(w, ew io.Writer) *cli.Command {
 		Sources: cli.EnvVars(label + "_TIMEZONE"),
 	}
 
+	tlsVersion := &cli.StringFlag{
+		Name:    "tls-version",
+		Aliases: []string{"m"},
+		Usage:   "tls minimum version to use",
+		Value:   tlc3.DefaultTLSVersionString,
+		Sources: cli.EnvVars(label + "_TLS_VERSION"),
+	}
+
 	before := func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 		// parse log level
 		var level slog.Level
@@ -111,15 +120,29 @@ func newCmd(w, ew io.Writer) *cli.Command {
 			withStyle,
 		))
 
+		// check flags combinations
 		if cmd.IsSet(addr.Name) && cmd.IsSet(file.Name) {
-			return nil, fmt.Errorf("cannot be used together %s and %s", addr.Name, file.Name)
+			return nil, fmt.Errorf("cannot be used together %q and %q", addr.Name, file.Name)
 		}
 
+		// confirm insecure flag
 		if cmd.Bool(insecure.Name) {
 			if err := confirmInsecure(); err != nil {
 				return nil, err
 			}
 		}
+
+		// confirm old TLS version
+		version, err := tlc3.ParseTLSVersion(cmd.String(tlsVersion.Name))
+		if err != nil {
+			return nil, err
+		}
+		if version < tls.VersionTLS12 {
+			if err := confirmTLSVersion(); err != nil {
+				return nil, err
+			}
+		}
+		cmd.Metadata[tlsVersion.Name] = version
 
 		return ctx, nil
 	}
@@ -150,7 +173,8 @@ func newCmd(w, ew io.Writer) *cli.Command {
 
 		// get certificate informations
 		logger.Info("getting certificate informations...")
-		infos, err := tlc3.GetCerts(ctx, addresses, cmd.Duration(timeout.Name), cmd.Bool(insecure.Name), loc)
+		version := cmd.Metadata[tlsVersion.Name].(uint16)
+		infos, err := tlc3.GetCerts(ctx, addresses, cmd.Duration(timeout.Name), cmd.Bool(insecure.Name), loc, version)
 		if err != nil {
 			return err
 		}
@@ -186,18 +210,29 @@ func newCmd(w, ew io.Writer) *cli.Command {
 		ErrWriter:             ew,
 		Before:                before,
 		Action:                action,
-		Flags:                 []cli.Flag{loglevel, addr, file, output, timeout, insecure, static, timeZone},
+		Flags:                 []cli.Flag{loglevel, addr, file, output, timeout, insecure, static, timeZone, tlsVersion},
+		Metadata:              map[string]any{},
 	}
 }
 
 // confirmInsecure prompts the user to confirm the use of the insecure flag.
 func confirmInsecure() error {
+	return confirm("[WARNING] insecure flag skips verification of the certificate chain and hostname. skip it")
+}
+
+// confirmTLSVersion prompts the user to confirm the use of an old TLS version.
+func confirmTLSVersion() error {
+	return confirm("[WARNING] We recommend using TLS version 1.2 or higher. Do you wish to proceed despite the risk")
+}
+
+// confirm prompts the user to confirm the action.
+func confirm(msg string) error {
 	ci, _ := strconv.ParseBool(os.Getenv(label + "_NON_INTERACTIVE"))
 	if ci {
 		return nil
 	}
 	prompt := promptui.Prompt{
-		Label:     "[WARNING] insecure flag skips verification of the certificate chain and hostname. skip it",
+		Label:     msg,
 		IsConfirm: true,
 	}
 	_, err := prompt.Run()

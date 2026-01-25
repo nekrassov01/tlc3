@@ -1,6 +1,7 @@
 package tlc3
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 )
@@ -67,5 +68,55 @@ func ParseOutputType(s string) (OutputType, error) {
 		return OutputTypeTSV, nil
 	default:
 		return OutputTypeNone, fmt.Errorf("unsupported output type: %q", s)
+	}
+}
+
+// TLSVersion represents the TLS version.
+type TLSVersion int
+
+const (
+	TLSVersionNone TLSVersion = iota // The minimum TLS version that means none.
+	TLSVersion10                     // The minimum TLS version 1.0.
+	TLSVersion11                     // The minimum TLS version 1.1.
+	TLSVersion12                     // The minimum TLS version 1.2.
+	TLSVersion13                     // The minimum TLS version 1.3.
+)
+
+// String returns the string representation of the tls version.
+func (t TLSVersion) String() string {
+	switch t {
+	case TLSVersionNone:
+		return "none"
+	case TLSVersion10:
+		return "1.0"
+	case TLSVersion11:
+		return "1.1"
+	case TLSVersion12:
+		return "1.2"
+	case TLSVersion13:
+		return "1.3"
+	default:
+		return ""
+	}
+}
+
+// MarshalJSON returns the JSON representation of the tls version.
+func (t TLSVersion) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.String())
+}
+
+// ParseTLSVersion parses the TLS version from the string representation.
+func ParseTLSVersion(s string) (uint16, error) {
+	switch s {
+	case TLSVersion10.String():
+		return tls.VersionTLS10, nil
+	case TLSVersion11.String():
+		return tls.VersionTLS11, nil
+	case TLSVersion12.String():
+		return tls.VersionTLS12, nil
+	case TLSVersion13.String():
+		return tls.VersionTLS13, nil
+	default:
+		return 0, fmt.Errorf("unsupported tls version: %q", s)
 	}
 }

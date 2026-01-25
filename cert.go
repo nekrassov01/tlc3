@@ -17,11 +17,20 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
-var (
-	nowFunc = time.Now
-	ipMap   sync.Map
-	connMap sync.Map
-)
+// DefaultTLSVersion is the default TLS version to use.
+const DefaultTLSVersion = tls.VersionTLS12
+
+// DefaultTLSVersionString is the string representation of the default TLS version.
+var DefaultTLSVersionString = TLSVersion12.String()
+
+// nowFunc is a variable to get the current time. Can be replaced during testing.
+var nowFunc = time.Now
+
+// ipMap caches IP address lookups.
+var ipMap sync.Map
+
+// connMap caches TLS connections.
+var connMap sync.Map
 
 // CertInfo represents certificate information.
 type CertInfo struct {
@@ -38,12 +47,12 @@ type CertInfo struct {
 }
 
 // GetCerts retrieves certificate information for the given addresses.
-func GetCerts(ctx context.Context, addrs []string, timeout time.Duration, insecure bool, location *time.Location) ([]*CertInfo, error) {
+func GetCerts(ctx context.Context, addrs []string, timeout time.Duration, insecure bool, location *time.Location, version uint16) ([]*CertInfo, error) {
 	result := make([]*CertInfo, len(addrs))
 
 	// function to process each address
 	fn := func(i int, addr string) error {
-		conn, err := newConnector(addr, timeout, insecure, location)
+		conn, err := newConnector(addr, timeout, insecure, location, version)
 		if err != nil {
 			return err
 		}
@@ -102,7 +111,7 @@ type connector struct {
 }
 
 // newConnector creates a new connector for the given address.
-func newConnector(addr string, timeout time.Duration, insecure bool, location *time.Location) (*connector, error) {
+func newConnector(addr string, timeout time.Duration, insecure bool, location *time.Location, version uint16) (*connector, error) {
 	if !strings.Contains(addr, ":") {
 		addr += ":443"
 	}
@@ -118,7 +127,7 @@ func newConnector(addr string, timeout time.Duration, insecure bool, location *t
 		location: location,
 		config: &tls.Config{
 			ServerName:         host,
-			MinVersion:         tls.VersionTLS12,
+			MinVersion:         version,
 			InsecureSkipVerify: insecure, // #nosec G402
 		},
 	}

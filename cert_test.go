@@ -53,7 +53,7 @@ func Test_GetCerts(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetCerts(tt.args.ctx, tt.args.addrs, tt.args.timeout, tt.args.insecure, tt.args.location)
+			got, err := GetCerts(tt.args.ctx, tt.args.addrs, tt.args.timeout, tt.args.insecure, tt.args.location, DefaultTLSVersion)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetCerts() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -94,7 +94,7 @@ func Test_newConnector(t *testing.T) {
 				location: time.Local,
 				config: &tls.Config{
 					ServerName:         host,
-					MinVersion:         tls.VersionTLS12,
+					MinVersion:         DefaultTLSVersion,
 					InsecureSkipVerify: false, // #nosec G402
 				},
 			},
@@ -116,7 +116,7 @@ func Test_newConnector(t *testing.T) {
 				location: time.Local,
 				config: &tls.Config{
 					ServerName:         "localhost",
-					MinVersion:         tls.VersionTLS12,
+					MinVersion:         DefaultTLSVersion,
 					InsecureSkipVerify: false, // #nosec G402
 				},
 			},
@@ -136,7 +136,7 @@ func Test_newConnector(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := newConnector(tt.args.addr, tt.args.timeout, tt.args.insecure, tt.args.location)
+			got, err := newConnector(tt.args.addr, tt.args.timeout, tt.args.insecure, tt.args.location, DefaultTLSVersion)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("newConnector() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -269,7 +269,7 @@ func Test_connector_connect(t *testing.T) {
 				timeout: 5 * time.Second,
 				config: &tls.Config{
 					ServerName:         host,
-					MinVersion:         tls.VersionTLS12,
+					MinVersion:         DefaultTLSVersion,
 					InsecureSkipVerify: true, // #nosec G402
 				},
 				conn: nil,
@@ -289,7 +289,7 @@ func Test_connector_connect(t *testing.T) {
 				timeout: 5 * time.Second,
 				config: &tls.Config{
 					ServerName:         host,
-					MinVersion:         tls.VersionTLS12,
+					MinVersion:         DefaultTLSVersion,
 					InsecureSkipVerify: true, // #nosec G402
 				},
 				conn: nil,
@@ -349,7 +349,7 @@ func Test_connector_getCert(t *testing.T) {
 				location: time.Local,
 				config: &tls.Config{
 					ServerName:         host,
-					MinVersion:         tls.VersionTLS12,
+					MinVersion:         DefaultTLSVersion,
 					InsecureSkipVerify: true, // #nosec G402
 				},
 			},
@@ -367,7 +367,7 @@ func Test_connector_getCert(t *testing.T) {
 				location: time.UTC,
 				config: &tls.Config{
 					ServerName:         host,
-					MinVersion:         tls.VersionTLS12,
+					MinVersion:         DefaultTLSVersion,
 					InsecureSkipVerify: true, // #nosec G402
 				},
 			},
@@ -385,7 +385,7 @@ func Test_connector_getCert(t *testing.T) {
 				location: time.UTC,
 				config: &tls.Config{
 					ServerName:         host,
-					MinVersion:         tls.VersionTLS12,
+					MinVersion:         DefaultTLSVersion,
 					InsecureSkipVerify: true, // #nosec G402
 				},
 			},
