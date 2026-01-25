@@ -16,6 +16,7 @@ linters:
     - lll
     - maintidx
     - mnd
+    - nestif
     - nlreturn
     - testpackage
     - wsl

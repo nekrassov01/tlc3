@@ -206,13 +206,19 @@ func (c *connector) lookupIP(ctx context.Context) {
 	}
 	var resolver net.Resolver
 	var err error
-	c.ips, err = resolver.LookupNetIP(ctx, "ip", c.host)
+	ips, err := resolver.LookupNetIP(ctx, "ip", c.host)
 	if err != nil {
 		c.ips = nil
+		ipMap.Store(c.host, c.ips)
+		return
 	}
-	slices.SortFunc(c.ips, func(a, b netip.Addr) int {
+	for i, addr := range ips {
+		ips[i] = addr.Unmap()
+	}
+	slices.SortFunc(ips, func(a, b netip.Addr) int {
 		return a.Compare(b)
 	})
+	c.ips = ips
 	ipMap.Store(c.host, c.ips)
 }
 

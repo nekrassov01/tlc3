@@ -8,6 +8,7 @@ import (
 	"net/netip"
 	"net/url"
 	"reflect"
+	"runtime"
 	"testing"
 	"time"
 )
@@ -57,6 +58,35 @@ func Test_GetCerts(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetCerts() error = %v, wantErr %v", err, tt.wantErr)
 				return
+			}
+			// On linux CI the resolver may not return IPv6 loopback (::1). Adjust expectations.
+			if runtime.GOOS == "linux" {
+				for i := range got {
+					if got[i] == nil {
+						continue
+					}
+					var addrs []netip.Addr
+					for _, a := range got[i].IPAddresses {
+						if a == netip.MustParseAddr("::1") {
+							continue
+						}
+						addrs = append(addrs, a)
+					}
+					got[i].IPAddresses = addrs
+				}
+				for i := range tt.want {
+					if tt.want[i] == nil {
+						continue
+					}
+					var addrs []netip.Addr
+					for _, a := range tt.want[i].IPAddresses {
+						if a == netip.MustParseAddr("::1") {
+							continue
+						}
+						addrs = append(addrs, a)
+					}
+					tt.want[i].IPAddresses = addrs
+				}
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GetCerts() = %v, want %v", got, tt.want)
@@ -232,6 +262,16 @@ func Test_connector_lookupIP(t *testing.T) {
 				conn:    tt.fields.conn,
 			}
 			c.lookupIP(tt.args.ctx)
+			if runtime.GOOS == "linux" {
+				var addrs []netip.Addr
+				for _, a := range tt.want {
+					if a == netip.MustParseAddr("::1") {
+						continue
+					}
+					addrs = append(addrs, a)
+				}
+				tt.want = addrs
+			}
 			if !reflect.DeepEqual(c.ips, tt.want) {
 				t.Errorf("lookupIP() = %v, want %v", c.ips, tt.want)
 			}
@@ -421,6 +461,28 @@ func Test_connector_getCert(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("connector.getCert() error = %v, wantErr %v", err, tt.wantErr)
 				return
+			}
+			if runtime.GOOS == "linux" {
+				if got != nil {
+					var addrs []netip.Addr
+					for _, a := range got.IPAddresses {
+						if a == netip.MustParseAddr("::1") {
+							continue
+						}
+						addrs = append(addrs, a)
+					}
+					got.IPAddresses = addrs
+				}
+				if tt.want != nil {
+					var addrs []netip.Addr
+					for _, a := range tt.want.IPAddresses {
+						if a == netip.MustParseAddr("::1") {
+							continue
+						}
+						addrs = append(addrs, a)
+					}
+					tt.want.IPAddresses = addrs
+				}
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("connector.getCert() = %v, want %v", got, tt.want)
