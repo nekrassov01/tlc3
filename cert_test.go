@@ -189,8 +189,14 @@ func Test_newConnector(t *testing.T) {
 			if !reflect.DeepEqual(got.location, tt.want.location) {
 				t.Errorf("location = %v, want %v", got.location, tt.want.location)
 			}
-			if !reflect.DeepEqual(got.config, tt.want.config) {
-				t.Errorf("config = %v, want %v", got.config, tt.want.config)
+			if !reflect.DeepEqual(got.config.ServerName, tt.want.config.ServerName) {
+				t.Errorf("config.ServerName = %v, want %v", got.config.ServerName, tt.want.config.ServerName)
+			}
+			if !reflect.DeepEqual(got.config.MinVersion, tt.want.config.MinVersion) {
+				t.Errorf("config.MinVersion = %v, want %v", got.config.MinVersion, tt.want.config.MinVersion)
+			}
+			if !reflect.DeepEqual(got.config.InsecureSkipVerify, tt.want.config.InsecureSkipVerify) {
+				t.Errorf("config.InsecureSkipVerify = %v, want %v", got.config.InsecureSkipVerify, tt.want.config.InsecureSkipVerify)
 			}
 		})
 	}

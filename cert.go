@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"os"
+	"path/filepath"
 	"runtime"
 	"slices"
 	"strings"
@@ -31,6 +33,10 @@ var ipMap sync.Map
 
 // connMap caches TLS connections.
 var connMap sync.Map
+
+// sslKeyLogFile is the path to the SSLKEYLOGFILE, if set in the environment.
+// See: https://datatracker.ietf.org/doc/draft-ietf-tls-keylogfile/
+var sslKeyLogFile, _ = os.LookupEnv("SSLKEYLOGFILE")
 
 // CertInfo represents certificate information.
 type CertInfo struct {
@@ -119,17 +125,24 @@ func newConnector(addr string, timeout time.Duration, insecure bool, location *t
 	if err != nil {
 		return nil, err
 	}
+	config := &tls.Config{
+		ServerName:         host,
+		MinVersion:         version,
+		InsecureSkipVerify: insecure, // #nosec G402
+	}
+	if sslKeyLogFile != "" {
+		w, err := os.OpenFile(filepath.Clean(sslKeyLogFile), os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
+		if err == nil {
+			config.KeyLogWriter = w
+		}
+	}
 	conn := &connector{
 		addr:     addr,
 		host:     host,
 		port:     port,
 		timeout:  timeout,
 		location: location,
-		config: &tls.Config{
-			ServerName:         host,
-			MinVersion:         version,
-			InsecureSkipVerify: insecure, // #nosec G402
-		},
+		config:   config,
 	}
 	return conn, nil
 }

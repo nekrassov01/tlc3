@@ -8,6 +8,19 @@ tlc3
 
 CLI application for checking TLS certificate informations
 
+Feature
+-------
+
+- Retrieve information from multiple certificates concurrency
+- Supports diverse output formats (ASCII table, JSON, TSV)
+- Flexible configuration
+  - Time zone
+  - Connection timeout
+  - Minimum TLS version
+  - Verification skip
+- Pass connection address information via file
+- Support [SSLKEYLOGFILE](https://datatracker.ietf.org/doc/draft-ietf-tls-keylogfile/)
+
 Usage
 -----
 
