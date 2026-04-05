@@ -33,7 +33,7 @@ func Test_GetCerts(t *testing.T) {
 				ctx:      context.Background(),
 				addrs:    []string{addr},
 				timeout:  5 * time.Second,
-				location: time.Local,
+				location: loc,
 				insecure: true,
 			},
 			want:    basicExpects,
@@ -113,7 +113,7 @@ func Test_newConnector(t *testing.T) {
 			args: args{
 				addr:     addr,
 				timeout:  5 * time.Second,
-				location: time.Local,
+				location: loc,
 				insecure: false,
 			},
 			want: &connector{
@@ -121,7 +121,7 @@ func Test_newConnector(t *testing.T) {
 				host:     host,
 				port:     port,
 				timeout:  5 * time.Second,
-				location: time.Local,
+				location: loc,
 				config: &tls.Config{
 					ServerName:         host,
 					MinVersion:         DefaultTLSVersion,
@@ -135,7 +135,7 @@ func Test_newConnector(t *testing.T) {
 			args: args{
 				addr:     "localhost",
 				timeout:  5 * time.Second,
-				location: time.Local,
+				location: loc,
 				insecure: false,
 			},
 			want: &connector{
@@ -143,7 +143,7 @@ func Test_newConnector(t *testing.T) {
 				host:     "localhost",
 				port:     "443",
 				timeout:  5 * time.Second,
-				location: time.Local,
+				location: loc,
 				config: &tls.Config{
 					ServerName:         "localhost",
 					MinVersion:         DefaultTLSVersion,
@@ -157,7 +157,7 @@ func Test_newConnector(t *testing.T) {
 			args: args{
 				addr:     "localhost[",
 				timeout:  5 * time.Second,
-				location: time.Local,
+				location: loc,
 				insecure: false,
 			},
 			want:    nil,
@@ -392,7 +392,7 @@ func Test_connector_getCert(t *testing.T) {
 				port:     port,
 				ips:      []netip.Addr{netip.MustParseAddr("127.0.0.1"), netip.MustParseAddr("::1")},
 				timeout:  5 * time.Second,
-				location: time.Local,
+				location: loc,
 				config: &tls.Config{
 					ServerName:         host,
 					MinVersion:         DefaultTLSVersion,

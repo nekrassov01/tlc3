@@ -8,7 +8,7 @@ import (
 
 func Benchmark_Single(b *testing.B) {
 	for b.Loop() {
-		_, err := GetCerts(context.Background(), []string{"localhost:8443"}, 5*time.Second, true, time.Local, DefaultTLSVersion)
+		_, err := GetCerts(context.Background(), []string{"localhost:8443"}, 5*time.Second, true, loc, DefaultTLSVersion)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -17,7 +17,7 @@ func Benchmark_Single(b *testing.B) {
 
 func Benchmark_Multiple(b *testing.B) {
 	for b.Loop() {
-		_, err := GetCerts(context.Background(), []string{"localhost:8443", "127.0.0.1:8443"}, 5*time.Second, true, time.Local, DefaultTLSVersion)
+		_, err := GetCerts(context.Background(), []string{"localhost:8443", "127.0.0.1:8443"}, 5*time.Second, true, loc, DefaultTLSVersion)
 		if err != nil {
 			b.Fatal(err)
 		}

@@ -83,8 +83,6 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	bk := time.Local
-	time.Local = loc
 	nowFunc = func() time.Time {
 		return currentTime
 	}
@@ -93,11 +91,10 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 	defer func() {
-		time.Local = bk
-		nowFunc = time.Now
 		if err := teardown(server, tempDir); err != nil {
 			panic(err)
 		}
+		nowFunc = time.Now
 	}()
 	m.Run()
 }
