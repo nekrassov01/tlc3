@@ -25,12 +25,10 @@ const (
 )
 
 var (
-	logger = &log.Logger{}
+	logger = log.NewLogger(log.NewCLIHandler(io.Discard))
 )
 
 func newCmd(w, ew io.Writer) *cli.Command {
-	logger = log.NewLogger(log.NewCLIHandler(io.Discard))
-
 	loglevel := &cli.StringFlag{
 		Name:    "log-level",
 		Aliases: []string{"l"},
@@ -104,20 +102,15 @@ func newCmd(w, ew io.Writer) *cli.Command {
 			level = slog.LevelInfo
 		}
 
-		// set logger options
+		// create logger for application
 		s := log.Style2()
 		s.Caller.Fullpath = true
-		withLevel := log.WithLevel(level)
-		withCaller := log.WithCaller(level <= slog.LevelDebug)
-		withStyle := log.WithStyle(s)
-
-		// create logger for application
 		logger = log.NewLogger(log.NewCLIHandler(ew,
-			log.WithLabel("TLC3:"),
+			log.WithLabel("TLC3"),
 			log.WithTime(true),
-			withLevel,
-			withCaller,
-			withStyle,
+			log.WithLevel(level),
+			log.WithCaller(level <= slog.LevelDebug),
+			log.WithStyle(s),
 		))
 
 		// check flags combinations
@@ -201,7 +194,7 @@ func newCmd(w, ew io.Writer) *cli.Command {
 
 	return &cli.Command{
 		Name:                  name,
-		Version:               getVersion(),
+		Version:               tlc3.Version(),
 		Usage:                 "TLS cert checker CLI",
 		Description:           "CLI application for checking TLS certificate informations",
 		HideHelpCommand:       true,
