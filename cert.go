@@ -90,8 +90,6 @@ func GetCerts(ctx context.Context, addrs []string, timeout time.Duration, insecu
 		if err := sem.Acquire(ctx, 1); err != nil {
 			return nil, err
 		}
-		i := i
-		addr := addr
 		eg.Go(func() error {
 			defer sem.Release(1)
 			return fn(i, addr)

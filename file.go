@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// GetAddressesFromFile reads addresses from a file and returns them as a slice of strings.
 func GetAddressesFromFile(fp string) ([]string, error) {
 	if fp == "" {
 		return nil, errors.New("no file provided")

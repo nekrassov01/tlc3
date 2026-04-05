@@ -10,14 +10,29 @@ import (
 type OutputType int
 
 const (
-	OutputTypeNone           OutputType = iota // The output type that means none.
-	OutputTypeJSON                             // The output type that means JSON format.
-	OutputTypePrettyJSON                       // The output type that means pretty JSON format.
-	OutputTypeText                             // The output type that means text format.
-	OutputTypeCompressedText                   // The output type that means compressed text format.
-	OutputTypeMarkdown                         // The output type that means markdown format.
-	OutputTypeBacklog                          // The output type that means backlog format.
-	OutputTypeTSV                              // The output type that means TSV format.
+	// OutputTypeNone is the output type that means none.
+	OutputTypeNone OutputType = iota
+
+	// OutputTypeJSON is the output type that means JSON format.
+	OutputTypeJSON
+
+	// OutputTypePrettyJSON is the output type that means pretty JSON format.
+	OutputTypePrettyJSON
+
+	// OutputTypeText is the output type that means text format.
+	OutputTypeText
+
+	// OutputTypeCompressedText is the output type that means compressed text format.
+	OutputTypeCompressedText
+
+	// OutputTypeMarkdown is the output type that means markdown format.
+	OutputTypeMarkdown
+
+	// OutputTypeBacklog is the output type that means backlog format.
+	OutputTypeBacklog
+
+	// OutputTypeTSV is the output type that means TSV format.
+	OutputTypeTSV
 )
 
 // String returns the string representation of the output type.
@@ -75,11 +90,20 @@ func ParseOutputType(s string) (OutputType, error) {
 type TLSVersion int
 
 const (
-	TLSVersionNone TLSVersion = iota // The minimum TLS version that means none.
-	TLSVersion10                     // The minimum TLS version 1.0.
-	TLSVersion11                     // The minimum TLS version 1.1.
-	TLSVersion12                     // The minimum TLS version 1.2.
-	TLSVersion13                     // The minimum TLS version 1.3.
+	// TLSVersionNone is the minimum TLS version that means none.
+	TLSVersionNone TLSVersion = iota
+
+	// TLSVersion10 is the minimum TLS version 1.0.
+	TLSVersion10
+
+	// TLSVersion11 is the minimum TLS version 1.1.
+	TLSVersion11
+
+	// TLSVersion12 is the minimum TLS version 1.2.
+	TLSVersion12
+
+	// TLSVersion13 is the minimum TLS version 1.3.
+	TLSVersion13
 )
 
 // String returns the string representation of the tls version.
