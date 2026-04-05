@@ -3,7 +3,7 @@ package tlc3
 import "fmt"
 
 // version is the current version of application.
-const version = "0.0.24"
+const version = "0.1.0"
 
 // revision is the git revision of application.
 var revision = ""
