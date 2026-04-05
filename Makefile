@@ -75,7 +75,7 @@ vuln: deps-vuln
 	govulncheck -test -show verbose ./...
 
 # ----------
-#  release
+#  version
 # ----------
 
 show-version: deps-bump
@@ -84,19 +84,3 @@ show-version: deps-bump
 show-revision: deps-bump
 	@echo $(shell git rev-parse --short HEAD)
 
-check-git:
-ifneq ($(shell git status --porcelain),)
-	$(error git workspace is dirty)
-endif
-ifneq ($(shell git rev-parse --abbrev-ref HEAD),main)
-	$(error current branch is not main)
-endif
-
-publish: check-git deps-bump
-	gobump up -w
-	git commit -am "bump up version to $(VERSION)"
-	git push origin main
-
-release: check-git deps-bump
-	git tag "v$(VERSION)"
-	git push origin "refs/tags/v$(VERSION)"
