@@ -1,11 +1,12 @@
 NAME := tlc3
 
+PKG := github.com/nekrassov01/$(NAME)
 CMD_PATH := ./cmd/$(NAME)/
 GOBIN ?= $(shell go env GOPATH)/bin
 
-VERSION := $$(make -s show-version)
-REVISION := $(shell git rev-parse --short HEAD)
-LDFLAGS := "-s -w -X main.version=$(VERSION) -X main.revision=$(REVISION)"
+VERSION := $$(make show-version)
+REVISION := $$(make show-revision)
+LDFLAGS := "-s -w -X $(PKG).version=$(VERSION) -X $(PKG).revision=$(REVISION)"
 
 HAS_LINT := $(shell command -v $(GOBIN)/golangci-lint 2> /dev/null)
 HAS_VULN := $(shell command -v $(GOBIN)/govulncheck 2> /dev/null)
@@ -17,7 +18,7 @@ BIN_BUMP := github.com/x-motemen/gobump/cmd/gobump@latest
 
 export GO111MODULE=on
 
-.PHONY: deps deps-lint deps-vuln deps-bump clean build check test cover bench lint vuln show-version check-git publish release
+.PHONY: deps deps-lint deps-vuln deps-bump clean build check test cover bench lint vuln show-version show-revision check-git publish release
 
 # -------
 #  deps
@@ -46,8 +47,7 @@ endif
 
 clean:
 	go clean
-	rm -f $(NAME) cover.out cover.html cpu.prof mem.prof $(NAME).test
-	find . -maxdepth 1 -type f -regextype posix-extended -regex '\./$(NAME)[0-9]*\.html' -exec rm {} \;
+	rm -f $(NAME) coverage.out coverage.html cpu.prof mem.prof $(NAME).test
 
 build: clean
 	go mod tidy
@@ -60,13 +60,13 @@ build: clean
 check: test cover bench lint vuln
 
 test:
-	go test -race -cover -v ./... -coverprofile=cover.out -covermode=atomic
+	go test -race -cover -v -coverprofile=coverage.out -covermode=atomic ./...
 
 cover:
-	go tool cover -html=cover.out -o cover.html
+	go tool cover -html=coverage.out -o coverage.html
 
 bench:
-	go test -bench=. -benchmem -count 5 -benchtime=10000x -cpuprofile=cpu.prof -memprofile=mem.prof
+	go test -bench . -benchmem -count 5 -benchtime=10000x -cpuprofile=cpu.prof -memprofile=mem.prof
 
 lint: deps-lint
 	golangci-lint run --verbose ./...
@@ -79,7 +79,10 @@ vuln: deps-vuln
 # ----------
 
 show-version: deps-bump
-	gobump show -r $(CMD_PATH)
+	@echo $(shell gobump show -r)
+
+show-revision: deps-bump
+	@echo $(shell git rev-parse --short HEAD)
 
 check-git:
 ifneq ($(shell git status --porcelain),)
@@ -90,10 +93,10 @@ ifneq ($(shell git rev-parse --abbrev-ref HEAD),main)
 endif
 
 publish: check-git deps-bump
-	gobump up -w $(CMD_PATH)
+	gobump up -w
 	git commit -am "bump up version to $(VERSION)"
 	git push origin main
 
-release: check-git
+release: check-git deps-bump
 	git tag "v$(VERSION)"
 	git push origin "refs/tags/v$(VERSION)"
