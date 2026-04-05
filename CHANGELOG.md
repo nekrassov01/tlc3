@@ -2,6 +2,10 @@
 
 ## [v0.1.0](https://github.com/nekrassov01/tlc3/compare/v0.0.24...v0.1.0) - 2026-04-05
 - chore(deps): bump Songmu/tagpr from 1.17.1 to 1.18.0 in the dependencies group by @dependabot[bot] in https://github.com/nekrassov01/tlc3/pull/1
+- Release for v0.1.0 by @github-actions[bot] in https://github.com/nekrassov01/tlc3/pull/2
+
+## [v0.1.0](https://github.com/nekrassov01/tlc3/compare/v0.0.24...v0.1.0) - 2026-04-05
+- chore(deps): bump Songmu/tagpr from 1.17.1 to 1.18.0 in the dependencies group by @dependabot[bot] in https://github.com/nekrassov01/tlc3/pull/1
 
 ## [v0.0.24](https://github.com/nekrassov01/tlc3/compare/v0.0.23...v0.0.24) - 2026-01-26
 
