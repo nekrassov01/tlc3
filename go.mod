@@ -1,13 +1,13 @@
 module github.com/nekrassov01/tlc3
 
-go 1.25.5
+go 1.26.1
 
 require (
 	github.com/manifoldco/promptui v0.9.0
-	github.com/nekrassov01/logger v0.0.6
+	github.com/nekrassov01/logger v0.0.9
 	github.com/nekrassov01/mintab v0.0.57
-	github.com/urfave/cli/v3 v3.6.2
-	golang.org/x/sync v0.19.0
+	github.com/urfave/cli/v3 v3.8.0
+	golang.org/x/sync v0.20.0
 )
 
 require (
