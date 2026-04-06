@@ -1,4 +1,4 @@
-name: tagpr
+name: Tagpr
 on:
   push:
     branches:
@@ -28,9 +28,9 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Run tagpr
-        uses: Songmu/tagpr@e7ae290f5cc5faabfdb4d131f8e4ce073ad8b3e2 # v1.18.0
+        uses: Songmu/tagpr@9d0f650553240dab1fa907eca27e3fd5b586e538 # v1.18.1
         id: run-tagpr
-  assets:
+  release:
     needs: tagpr
     if: needs.tagpr.outputs.tagpr-tag != ''
     timeout-minutes: 30
