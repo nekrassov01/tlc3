@@ -1,11 +1,11 @@
-NAME := tlc3
+NAME := s3bytes
 
 PKG := github.com/nekrassov01/$(NAME)
 CMD_PATH := ./cmd/$(NAME)/
 GOBIN ?= $(shell go env GOPATH)/bin
 
-VERSION := $$(make show-version)
-REVISION := $$(make show-revision)
+VERSION := $$(make version)
+REVISION := $$(make revision)
 LDFLAGS := "-s -w -X $(PKG).version=$(VERSION) -X $(PKG).revision=$(REVISION)"
 
 HAS_LINT := $(shell command -v $(GOBIN)/golangci-lint 2> /dev/null)
@@ -18,7 +18,7 @@ BIN_BUMP := github.com/x-motemen/gobump/cmd/gobump@latest
 
 export GO111MODULE=on
 
-.PHONY: deps deps-lint deps-vuln deps-bump clean build check test cover bench lint vuln show-version show-revision check-git publish release
+.PHONY: deps deps-lint deps-vuln deps-bump clean build check test cover bench lint vuln version revision check-git bump
 
 # -------
 #  deps
@@ -78,19 +78,18 @@ vuln: deps-vuln
 #  version
 # ----------
 
-show-version: deps-bump
+version: deps-bump
 	@echo $(shell gobump show -r)
 
-show-revision: deps-bump
+revision: deps-bump
 	@echo $(shell git rev-parse --short HEAD)
 
 check-git:
 ifneq ($(shell git status --porcelain),)
 	$(error git workspace is dirty)
 endif
-ifneq ($(shell git rev-parse --abbrev-ref HEAD),main)
-	$(error current branch is not main)
-endif
 
 bump: check-git deps-bump
 	gobump up -w
+	git commit -am "bump up version to $(VERSION)"
+	git push origin main
