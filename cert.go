@@ -36,7 +36,7 @@ var connMap sync.Map
 
 // sslKeyLogFile is the path to the SSLKEYLOGFILE, if set in the environment.
 // See: https://datatracker.ietf.org/doc/draft-ietf-tls-keylogfile/
-var sslKeyLogFile, _ = os.LookupEnv("SSLKEYLOGFILE")
+var sslKeyLogFile = os.Getenv("SSLKEYLOGFILE")
 
 // CertInfo represents certificate information.
 type CertInfo struct {
