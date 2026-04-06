@@ -19,21 +19,16 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-const (
-	name  = "tlc3"
-	label = "TLC3"
-)
+const name = "tlc3"
 
-var (
-	logger = log.NewLogger(log.NewCLIHandler(io.Discard))
-)
+var logger = log.NewLogger(log.NewCLIHandler(io.Discard))
 
 func newCmd(w, ew io.Writer) *cli.Command {
 	loglevel := &cli.StringFlag{
 		Name:    "log-level",
 		Aliases: []string{"l"},
 		Usage:   "set log level",
-		Sources: cli.EnvVars(label + "_LOG_LEVEL"),
+		Sources: cli.EnvVars("TLC3_LOG_LEVEL"),
 		Value:   slog.LevelInfo.String(),
 	}
 
@@ -53,7 +48,7 @@ func newCmd(w, ew io.Writer) *cli.Command {
 		Name:    "output",
 		Aliases: []string{"o"},
 		Usage:   "set output type",
-		Sources: cli.EnvVars(label + "_OUTPUT_TYPE"),
+		Sources: cli.EnvVars("TLC3_OUTPUT_TYPE"),
 		Value:   tlc3.OutputTypeText.String(),
 	}
 
@@ -62,7 +57,7 @@ func newCmd(w, ew io.Writer) *cli.Command {
 		Aliases: []string{"t"},
 		Usage:   "set network timeout duration",
 		Value:   5 * time.Second,
-		Sources: cli.EnvVars(label + "_TIMEOUT"),
+		Sources: cli.EnvVars("TLC3_TIMEOUT"),
 	}
 
 	insecure := &cli.BoolFlag{
@@ -84,7 +79,7 @@ func newCmd(w, ew io.Writer) *cli.Command {
 		Aliases: []string{"z"},
 		Usage:   "time zone for datetime fields",
 		Value:   "Local",
-		Sources: cli.EnvVars(label + "_TIMEZONE"),
+		Sources: cli.EnvVars("TLC3_TIMEZONE"),
 	}
 
 	tlsVersion := &cli.StringFlag{
@@ -92,7 +87,7 @@ func newCmd(w, ew io.Writer) *cli.Command {
 		Aliases: []string{"m"},
 		Usage:   "tls minimum version to use",
 		Value:   tlc3.DefaultTLSVersionString,
-		Sources: cli.EnvVars(label + "_TLS_VERSION"),
+		Sources: cli.EnvVars("TLC3_TLS_VERSION"),
 	}
 
 	before := func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
@@ -220,7 +215,7 @@ func confirmTLSVersion() error {
 
 // confirm prompts the user to confirm the action.
 func confirm(msg string) error {
-	ci, _ := strconv.ParseBool(os.Getenv(label + "_NON_INTERACTIVE"))
+	ci, _ := strconv.ParseBool(os.Getenv("TLC3_NON_INTERACTIVE"))
 	if ci {
 		return nil
 	}

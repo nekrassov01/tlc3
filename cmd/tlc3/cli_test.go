@@ -117,7 +117,7 @@ func Test_cli(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		err := os.Setenv(label+"_NON_INTERACTIVE", "true")
+		err := os.Setenv("TLC3_NON_INTERACTIVE", "true")
 		if err != nil {
 			t.Fatal(err)
 		}
