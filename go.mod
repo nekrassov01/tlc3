@@ -4,8 +4,8 @@ go 1.26.1
 
 require (
 	github.com/manifoldco/promptui v0.9.0
-	github.com/nekrassov01/logger v0.0.9
-	github.com/nekrassov01/mintab v0.0.57
+	github.com/nekrassov01/logger v0.1.1
+	github.com/nekrassov01/mintab v0.1.4
 	github.com/urfave/cli/v3 v3.8.0
 	golang.org/x/sync v0.20.0
 )
@@ -15,6 +15,6 @@ require (
 	github.com/clipperhouse/uax29/v2 v2.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-runewidth v0.0.19 // indirect
+	github.com/mattn/go-runewidth v0.0.23 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 )
