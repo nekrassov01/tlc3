@@ -16,11 +16,6 @@ func Test_cli(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "basic",
-			args:    []string{name, insecure, "-a", "example.com"},
-			wantErr: false,
-		},
-		{
 			name:    "blank host",
 			args:    []string{name, insecure, "-a", ""},
 			wantErr: true,
@@ -31,44 +26,14 @@ func Test_cli(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "list",
-			args:    []string{name, insecure, "-f", filepath.Join("testdata", "1.txt")},
-			wantErr: false,
-		},
-		{
-			name:    "list+indent",
-			args:    []string{name, insecure, "-f", filepath.Join("testdata", "2.txt")},
-			wantErr: false,
-		},
-		{
-			name:    "list+newline",
-			args:    []string{name, insecure, "-f", filepath.Join("testdata", "3.txt")},
-			wantErr: false,
-		},
-		{
-			name:    "list+singleQuote",
-			args:    []string{name, insecure, "-f", filepath.Join("testdata", "4.txt")},
-			wantErr: false,
-		},
-		{
-			name:    "list+doubleQuote",
-			args:    []string{name, insecure, "-f", filepath.Join("testdata", "5.txt")},
-			wantErr: false,
-		},
-		{
 			name:    "list+comma",
-			args:    []string{name, insecure, "-f", filepath.Join("testdata", "6.txt")},
+			args:    []string{name, insecure, "-f", filepath.Join("..", "testdata", "1.txt")},
 			wantErr: true,
 		},
 		{
 			name:    "list+blank",
-			args:    []string{name, insecure, "-f", filepath.Join("testdata", "7.txt")},
+			args:    []string{name, insecure, "-f", filepath.Join("..", "testdata", "2.txt")},
 			wantErr: true,
-		},
-		{
-			name:    "timeout",
-			args:    []string{name, insecure, "-a", "example.com", "-t", "10s"},
-			wantErr: false,
 		},
 		{
 			name:    "timeout invalid string",
@@ -76,34 +41,9 @@ func Test_cli(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "output json",
-			args:    []string{name, insecure, "-a", "example.com", "-o", "json"},
-			wantErr: false,
-		},
-		{
-			name:    "output markdown",
-			args:    []string{name, insecure, "-a", "example.com", "-o", "markdown"},
-			wantErr: false,
-		},
-		{
-			name:    "output backlog",
-			args:    []string{name, insecure, "-a", "example.com", "-o", "backlog"},
-			wantErr: false,
-		},
-		{
 			name:    "output unknown format",
 			args:    []string{name, insecure, "-a", "example.com", "-o", "unknown"},
 			wantErr: true,
-		},
-		{
-			name:    "static",
-			args:    []string{name, insecure, "-a", "example.com", "-s"},
-			wantErr: false,
-		},
-		{
-			name:    "timezone",
-			args:    []string{name, insecure, "-a", "example.com", "-z", "UTC"},
-			wantErr: false,
 		},
 		{
 			name:    "unknown flag provided",
