@@ -65,27 +65,13 @@ func Test_GetCerts(t *testing.T) {
 					if got[i] == nil {
 						continue
 					}
-					var addrs []netip.Addr
-					for _, a := range got[i].IPAddresses {
-						if a == netip.MustParseAddr("::1") {
-							continue
-						}
-						addrs = append(addrs, a)
-					}
-					got[i].IPAddresses = addrs
+					got[i].IPAddresses = normalizeIP(t, got[i].IPAddresses)
 				}
 				for i := range tt.want {
 					if tt.want[i] == nil {
 						continue
 					}
-					var addrs []netip.Addr
-					for _, a := range tt.want[i].IPAddresses {
-						if a == netip.MustParseAddr("::1") {
-							continue
-						}
-						addrs = append(addrs, a)
-					}
-					tt.want[i].IPAddresses = addrs
+					tt.want[i].IPAddresses = normalizeIP(t, tt.want[i].IPAddresses)
 				}
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -236,7 +222,10 @@ func Test_connector_lookupIP(t *testing.T) {
 			args: args{
 				ctx: ctx,
 			},
-			want: []netip.Addr{netip.MustParseAddr("127.0.0.1"), netip.MustParseAddr("::1")},
+			want: []netip.Addr{
+				netip.MustParseAddr("127.0.0.1"),
+				netip.MustParseAddr("::1"),
+			},
 		},
 		{
 			name: "empty",
@@ -269,14 +258,7 @@ func Test_connector_lookupIP(t *testing.T) {
 			}
 			c.lookupIP(tt.args.ctx)
 			if runtime.GOOS == "linux" {
-				var addrs []netip.Addr
-				for _, a := range tt.want {
-					if a == netip.MustParseAddr("::1") {
-						continue
-					}
-					addrs = append(addrs, a)
-				}
-				tt.want = addrs
+				tt.want = normalizeIP(t, tt.want)
 			}
 			if !reflect.DeepEqual(c.ips, tt.want) {
 				t.Errorf("lookupIP() = %v, want %v", c.ips, tt.want)
@@ -387,10 +369,13 @@ func Test_connector_getCert(t *testing.T) {
 		{
 			name: "basic",
 			fields: fields{
-				addr:     addr,
-				host:     host,
-				port:     port,
-				ips:      []netip.Addr{netip.MustParseAddr("127.0.0.1"), netip.MustParseAddr("::1")},
+				addr: addr,
+				host: host,
+				port: port,
+				ips: []netip.Addr{
+					netip.MustParseAddr("127.0.0.1"),
+					netip.MustParseAddr("::1"),
+				},
 				timeout:  5 * time.Second,
 				location: loc,
 				config: &tls.Config{
@@ -405,10 +390,13 @@ func Test_connector_getCert(t *testing.T) {
 		{
 			name: "utc",
 			fields: fields{
-				addr:     addr,
-				host:     host,
-				port:     port,
-				ips:      []netip.Addr{netip.MustParseAddr("127.0.0.1"), netip.MustParseAddr("::1")},
+				addr: addr,
+				host: host,
+				port: port,
+				ips: []netip.Addr{
+					netip.MustParseAddr("127.0.0.1"),
+					netip.MustParseAddr("::1"),
+				},
 				timeout:  5 * time.Second,
 				location: time.UTC,
 				config: &tls.Config{
@@ -423,10 +411,13 @@ func Test_connector_getCert(t *testing.T) {
 		{
 			name: "invalid conn",
 			fields: fields{
-				addr:     addr,
-				host:     host,
-				port:     port,
-				ips:      []netip.Addr{netip.MustParseAddr("127.0.0.1"), netip.MustParseAddr("::1")},
+				addr: addr,
+				host: host,
+				port: port,
+				ips: []netip.Addr{
+					netip.MustParseAddr("127.0.0.1"),
+					netip.MustParseAddr("::1"),
+				},
 				timeout:  5 * time.Second,
 				location: time.UTC,
 				config: &tls.Config{
@@ -470,24 +461,10 @@ func Test_connector_getCert(t *testing.T) {
 			}
 			if runtime.GOOS == "linux" {
 				if got != nil {
-					var addrs []netip.Addr
-					for _, a := range got.IPAddresses {
-						if a == netip.MustParseAddr("::1") {
-							continue
-						}
-						addrs = append(addrs, a)
-					}
-					got.IPAddresses = addrs
+					got.IPAddresses = normalizeIP(t, got.IPAddresses)
 				}
 				if tt.want != nil {
-					var addrs []netip.Addr
-					for _, a := range tt.want.IPAddresses {
-						if a == netip.MustParseAddr("::1") {
-							continue
-						}
-						addrs = append(addrs, a)
-					}
-					tt.want.IPAddresses = addrs
+					tt.want.IPAddresses = normalizeIP(t, tt.want.IPAddresses)
 				}
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -520,7 +497,15 @@ func Test_getSANs(t *testing.T) {
 					URIs:           []*url.URL{uri},
 				},
 			},
-			want: []string{"example.com", "www.example.com", "aaa@example.com", "bbb@example.com", "192.168.10.10", "192.168.10.20", "example.com/"},
+			want: []string{
+				"example.com",
+				"www.example.com",
+				"aaa@example.com",
+				"bbb@example.com",
+				"192.168.10.10",
+				"192.168.10.20",
+				"example.com/",
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -630,4 +615,19 @@ func Test_getDaysLeft(t *testing.T) {
 			}
 		})
 	}
+}
+
+func normalizeIP(t *testing.T, addrs []netip.Addr) []netip.Addr {
+	t.Helper()
+	result := make([]netip.Addr, 0, len(addrs))
+	for _, addr := range addrs {
+		if addr == netip.MustParseAddr("::1") {
+			continue
+		}
+		result = append(result, addr)
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return result
 }

@@ -1,15 +1,20 @@
-tlc3
-====
+<p align="center">
+  <h2 align="center">TLC3</h2>
+  <p align="center">TLS cert checker CLI</p>
+  <p align="center">
+    <a href="https://github.com/nekrassov01/tlc3/actions/workflows/ci.yml"><img src="https://github.com/nekrassov01/tlc3/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" /></a>
+    <a href="https://pkg.go.dev/github.com/nekrassov01/tlc3"><img src="https://pkg.go.dev/badge/github.com/nekrassov01/tlc3.svg" alt="Go Reference" /></a>
+    <a href="https://goreportcard.com/report/github.com/nekrassov01/tlc3"><img src="https://goreportcard.com/badge/github.com/nekrassov01/tlc3" alt="Go Report Card" /></a>
+    <img src="https://img.shields.io/github/license/nekrassov01/tlc3" alt="LICENSE" />
+    <a href="https://deepwiki.com/nekrassov01/tlc3"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki" /></a>
+  </p>
+</p>
 
-[![CI](https://github.com/nekrassov01/tlc3/actions/workflows/ci.yml/badge.svg)](https://github.com/nekrassov01/tlc3/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/nekrassov01/tlc3)](https://goreportcard.com/report/github.com/nekrassov01/tlc3)
-![GitHub](https://img.shields.io/github/license/nekrassov01/tlc3)
-![GitHub](https://img.shields.io/github/v/release/nekrassov01/tlc3)
+## Overview
 
-CLI application for checking TLS certificate informations
+This is a small, simple CLI tool that allows you to quickly retrieve HTTPS certificate information from multiple sites.
 
-Feature
--------
+## Features
 
 - Retrieve information from multiple certificates concurrency
 - Supports diverse output formats (ASCII table, JSON, TSV)
@@ -21,8 +26,7 @@ Feature
 - Pass connection address information via file
 - Support [SSLKEYLOGFILE](https://datatracker.ietf.org/doc/draft-ietf-tls-keylogfile/)
 
-Usage
------
+## Usage
 
 ```text
 NAME:
@@ -51,8 +55,7 @@ GLOBAL OPTIONS:
    --version, -v                                                print the version
 ```
 
-Example
--------
+## Example
 
 ```bash
 # Pass domains separated by commas. Return in JSON by default
@@ -83,14 +86,13 @@ tlc3 -a example.com,www.example.com -z "Asia/Tokyo"
 tlc3 -a example.com,www.example.com -m "1.3"
 ```
 
-Benchmark
----------
+## Benchmark
 
 [A quick benchmark](./benchmark_test.go) after improvement using connection pool
 
 ```text
 $ make bench
-go test -bench=. -benchmem -count 5 -benchtime=10000x -cpuprofile=cpu.prof -memprofile=mem.prof
+go test -bench . -benchmem -count 5 -benchtime 10000x -cpuprofile cpu.prof -memprofile mem.prof .
 goos: darwin
 goarch: arm64
 pkg: github.com/nekrassov01/tlc3
@@ -109,8 +111,7 @@ PASS
 ok      github.com/nekrassov01/tlc3     6.502s
 ```
 
-Warning
--------
+## Warning
 
 `--insecure`,`-i` option can be used to skip verification of the certificate chain and host name. However, this risks exposure to man-in-the-middle attacks and should not be used unless it is clear that there is no problem.
 
@@ -134,8 +135,7 @@ $ tlc3 -a example.com,www.example.com -m 1.1
 ? [WARNING] We recommend using TLS version 1.2 or higher. Do you wish to proceed despite the risk? [y/N]
 ```
 
-Installation
-------------
+## Installation
 
 Install with homebrew
 
@@ -151,21 +151,23 @@ go install github.com/nekrassov01/tlc3
 
 Or download binary from [releases](https://github.com/nekrassov01/tlc3/releases)
 
-Shell completion
-----------------
+## Shell completion
 
-Supported shells are as follows:
+Supported Shells are as follows:
+
+- bash
+- zsh
+- fish
+- pwsh
 
 ```sh
-tlc3 completion bash|zsh|pwsh|fish
+tlc3 completion bash|zsh|fish|pwsh
 ```
 
-Author
-------
+## Author
 
 [nekrassov01](https://github.com/nekrassov01)
 
-License
--------
+## License
 
 [MIT](https://github.com/nekrassov01/tlc3/blob/main/LICENSE)

@@ -43,11 +43,11 @@ brews:
   - repository:
       owner: nekrassov01
       name: homebrew-tap
-      branch: main
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    description: "TLS cert checker CLI"
-    homepage: "https://github.com/nekrassov01/tlc3"
-    license: "MIT"
+      branch: main
     directory: Formula
+    homepage: "https://github.com/nekrassov01/tlc3"
+    description: "TLS cert checker CLI"
+    license: "MIT"
 release:
   use_existing_draft: true

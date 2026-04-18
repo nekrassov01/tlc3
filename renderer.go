@@ -23,8 +23,7 @@ var header = []string{
 	"DaysLeft",
 }
 
-// Renderer is a renderer struct for the s3bytes package.
-// OutputType represents the type of the output.
+// Renderer represents the renderer for the output.
 type Renderer struct {
 	Header     []string
 	Data       []*CertInfo
